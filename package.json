@@ -1,0 +1,21 @@
+{
+  "name": "fateh-maintenance-portal",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.118.0",
+    "qrcode": "1.5.4"
+  },
+  "devDependencies": {
+    "vite": "8.3.5"
+  },
+  "optionalDependencies": {
+    "@rolldown/binding-win32-x64-msvc": "1.2.16"
+  }
+}
