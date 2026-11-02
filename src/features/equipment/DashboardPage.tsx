@@ -10,7 +10,7 @@ import { formatDate } from '../../shared/date';
 import { useEquipmentList } from './queries';
 import { EquipmentForm } from './EquipmentForm';
 
-type Filter = EquipmentType | 'all';
+type Filter = EquipmentType | 'out_of_service' | 'maintenance' | 'all';
 
 function StatCard({
   label,
@@ -78,18 +78,25 @@ export function DashboardPage() {
   const [formOpen, setFormOpen] = useState(false);
   const query = useEquipmentList();
   const items = query.data ?? [];
-  const rawFilter = params.get('type');
-  const filter: Filter = rawFilter === 'machine' || rawFilter === 'crane' ? rawFilter : 'all';
+  const rawType = params.get('type');
+  const rawStatus = params.get('status');
+  const filter: Filter =
+    rawStatus === 'out_of_service' || rawStatus === 'maintenance'
+      ? rawStatus
+      : rawType === 'machine' || rawType === 'crane'
+        ? rawType
+        : 'all';
   const counts = {
     machine: items.filter((item) => item.type === 'machine').length,
     crane: items.filter((item) => item.type === 'crane').length,
     out: items.filter((item) => item.status === 'out_of_service').length,
+    maintenance: items.filter((item) => item.status === 'maintenance').length,
   };
   const visible = useMemo(
     () =>
       items.filter(
         (item) =>
-          (filter === 'all' || item.type === filter) &&
+          (filter === 'all' || item.type === filter || item.status === filter) &&
           [item.name, item.code, item.location, item.model]
             .join(' ')
             .toLocaleLowerCase()
@@ -98,7 +105,12 @@ export function DashboardPage() {
     [items, filter, search],
   );
   function selectFilter(value: Filter) {
-    setParams(value === 'all' ? {} : { type: value });
+    const next = new URLSearchParams(params);
+    next.delete('type');
+    next.delete('status');
+    if (value === 'machine' || value === 'crane') next.set('type', value);
+    if (value === 'out_of_service' || value === 'maintenance') next.set('status', value);
+    setParams(next);
   }
 
   return (
@@ -139,12 +151,14 @@ export function DashboardPage() {
           <span className="result-count">{visible.length} معدة</span>
         </div>
         <div className="list-toolbar">
-          <div className="tabs" role="tablist" aria-label="نوع المعدة">
+          <div className="tabs" role="tablist" aria-label="تصفية المعدات">
             {(
               [
                 ['all', 'الكل', items.length],
                 ['machine', 'الماكينات', counts.machine],
                 ['crane', 'الأوناش', counts.crane],
+                ['out_of_service', 'خارج الخدمة', counts.out],
+                ['maintenance', 'تحت الصيانة', counts.maintenance],
               ] as const
             ).map(([value, label, count]) => (
               <button
@@ -204,7 +218,7 @@ export function DashboardPage() {
           <div className="empty-state">
             <div>⌕</div>
             <h3>لا توجد معدات مطابقة</h3>
-            <p>جرّب كلمة بحث مختلفة أو غيّر نوع المعدة.</p>
+            <p>جرّب كلمة بحث مختلفة أو غيّر تصفية المعدات.</p>
           </div>
         )}
       </section>

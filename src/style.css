@@ -344,6 +344,8 @@ main {
 .tabs {
   display: flex;
   gap: 20px;
+  min-width: 0;
+  overflow-x: auto;
 }
 .tab {
   border: 0;
@@ -1024,8 +1026,7 @@ tbody tr:focus {
     padding: 0 16px 15px;
   }
   .tabs {
-    justify-content: space-between;
-    gap: 6px;
+    gap: 12px;
   }
   .tab {
     font-size: 10px;
