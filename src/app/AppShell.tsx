@@ -26,7 +26,7 @@ export function AppShell() {
         <Link to="/" className="brand">
           <div className="brand-mark">M</div>
           <div>
-            <strong>فتح الصناعية</strong>
+            <strong>مصنع الفتح</strong>
             <small>قسم الصيانة</small>
           </div>
         </Link>
