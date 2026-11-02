@@ -50,7 +50,7 @@ function EquipmentRow({ item, open }: { item: Equipment; open(): void }) {
           <EquipmentIcon type={item.type} />
           <div>
             <strong>{item.name}</strong>
-            <small>{item.model || 'ملف المعدة'}</small>
+            {item.model && <small>{item.model}</small>}
           </div>
         </div>
       </td>
