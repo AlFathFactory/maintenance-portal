@@ -52,7 +52,7 @@ export function EquipmentPage() {
   const [form, setForm] = useState<FormKind>(null);
   const query = useEquipment(slug);
   const item = query.data;
-  const history = useMaintenance(item?.id ?? '', isAdmin);
+  const history = useMaintenance(item?.id ?? '', true);
   if (query.isPending) return <div className="loading">جارٍ تحميل ملف المعدة...</div>;
   if (query.error) return <ErrorMessage error={query.error} retry={() => void query.refetch()} />;
   if (!item)
@@ -108,11 +108,7 @@ export function EquipmentPage() {
             <div className="panel-heading">
               <div>
                 <h2>سجل الصيانة</h2>
-                <p>
-                  {isAdmin
-                    ? 'كل عمليات الصيانة المسجلة لهذه المعدة.'
-                    : 'تفاصيل أعمال الصيانة متاحة لمسؤول القسم.'}
-                </p>
+                <p>كل عمليات الصيانة المسجلة لهذه المعدة.</p>
               </div>
               {isAdmin && (
                 <button className="small-primary" onClick={() => setForm('maintenance')}>
@@ -120,19 +116,12 @@ export function EquipmentPage() {
                 </button>
               )}
             </div>
-            {isAdmin ? (
-              history.isPending ? (
-                <div className="loading">جارٍ تحميل سجل الصيانة...</div>
-              ) : history.error ? (
-                <ErrorMessage error={history.error} retry={() => void history.refetch()} />
-              ) : (
-                <MaintenanceHistory records={history.data ?? []} />
-              )
+            {history.isPending ? (
+              <div className="loading">جارٍ تحميل سجل الصيانة...</div>
+            ) : history.error ? (
+              <ErrorMessage error={history.error} retry={() => void history.refetch()} />
             ) : (
-              <div className="history-empty compact">
-                <span>🔒</span>
-                <p>سجّل الدخول كمسؤول صيانة لعرض الملاحظات وسجل العمليات.</p>
-              </div>
+              <MaintenanceHistory records={history.data ?? []} />
             )}
           </section>
         </div>
