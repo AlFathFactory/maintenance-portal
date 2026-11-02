@@ -24,7 +24,7 @@ export function AppShell() {
     <div className="app-shell">
       <aside className="sidebar">
         <Link to="/" className="brand">
-          <div className="brand-mark">F</div>
+          <div className="brand-mark">M</div>
           <div>
             <strong>فتح الصناعية</strong>
             <small>قسم الصيانة</small>
