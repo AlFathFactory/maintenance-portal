@@ -33,12 +33,16 @@ maintenance-portal/
 │   ├── schema.sql                # Initial schema, grants, RLS policies, trigger
 │   └── seed.sql                  # Initial equipment data
 └── src/
-    ├── main.tsx                 # React root, global CSS import
-    ├── style.css                # Global, page, form, modal, responsive and RTL styles
+    ├── main.tsx                 # React root and ordered stylesheet imports
+    ├── styles/
+    │   ├── globals.css         # Reset, typography, and document defaults
+    │   ├── utilities.css       # Loading, empty, and not-found states
+    │   └── print.css           # Print-only layout and QR output
     ├── equipment.json           # Initial local demo equipment dataset
     ├── app/
     │   ├── App.tsx              # Providers, HashRouter, routes, lazy-loaded pages
-    │   └── AppShell.tsx         # Navigation/sidebar, login/logout UI, Outlet
+    │   ├── AppShell.tsx         # Navigation/sidebar, login/logout UI, Outlet
+    │   └── AppShell.css        # Shell, navigation, and responsive layout
     ├── config/
     │   └── env.ts               # Vite env parsing; determines demo vs Supabase
     ├── domain/
@@ -49,7 +53,9 @@ maintenance-portal/
     │   │   ├── AuthProvider.tsx  # Supabase session, admin lookup, useAuth()
     │   │   └── LoginModal.tsx   # Sign-in form
     │   ├── equipment/
-    │   │   ├── DashboardPage.tsx# List, dashboard stats, search and type filter
+    │   │   ├── DashboardPage.tsx# List, dashboard stats, search and filters
+    │   │   ├── dashboard.css    # Dashboard layout, tabs, and table
+    │   │   ├── equipment.css    # Equipment detail and summary layout
     │   │   ├── EquipmentPage.tsx# Equipment details, history, QR and action modals
     │   │   ├── EquipmentForm.tsx# Add/edit equipment
     │   │   ├── StatusForm.tsx   # Change equipment status
@@ -57,6 +63,7 @@ maintenance-portal/
     │   └── maintenance/
     │       ├── MaintenanceForm.tsx    # Add repair / periodic maintenance
     │       ├── MaintenanceHistory.tsx # Read-only maintenance timeline
+    │       ├── maintenance.css        # History empty state and timeline
     │       └── queries.ts            # Maintenance React Query hooks/mutations
     ├── services/
     │   ├── repository.ts         # MaintenanceRepository interface: data contract
@@ -66,6 +73,11 @@ maintenance-portal/
     │   └── demoRepository.ts     # Equivalent localStorage-backed implementation
     └── shared/
         ├── date.ts               # formatDate() and todayLocal()
+        ├── styles/
+        │   ├── buttons.css       # Shared action buttons
+        │   ├── components.css    # Panels, badges, icons, fields, QR, toast, errors
+        │   ├── forms.css         # Shared form layouts and controls
+        │   └── modal.css         # Modal backdrop and frame
         └── ui/
             ├── EquipmentIcon.tsx # Equipment icon by type
             ├── ErrorMessage.tsx  # Error display + optional retry
@@ -130,9 +142,11 @@ Supabase INSERT into maintenance_records
 | `formatDate`, `todayLocal` | `src/shared/date.ts` | Arabic date formatting and local date defaults. |
 | `statusDetails`, `typeLabels` | `src/domain/equipment.ts` | Single source for labels, statuses, equipment kinds. |
 | `MaintenanceHistory` | `src/features/maintenance/MaintenanceHistory.tsx` | Read-only timeline for both admins and public visitors. |
-| `src/style.css` | global stylesheet | Reuse existing style classes; preserve Arabic RTL and responsiveness. |
+| `src/styles/`, feature CSS, `src/shared/styles/` | Ordered imports in `src/main.tsx` | Keep page rules with their feature and shared controls in shared styles. |
 
-**Feature-placement rule:** feature-specific UI/hooks go under `src/features/<feature>/`; cross-feature primitives under `src/shared/`; entity types under `src/domain/`; all remote/local data access under `src/services/`.
+**Feature-placement rule:** feature-specific UI/hooks and CSS go under `src/features/<feature>/`; cross-feature primitives and styles under `src/shared/`; entity types under `src/domain/`; all remote/local data access under `src/services/`.
+
+**Styling convention:** `src/main.tsx` imports CSS in an explicit order: global foundations, shell, shared buttons, dashboard, shared components, utilities, equipment detail, maintenance, modal, forms, then print. Keep responsive rules beside their base selectors and print rules in `src/styles/print.css`. Add new styles to the owning feature or shared stylesheet, preserving existing class names and RTL behavior. Place future CSS variables in `src/styles/globals.css`.
 
 ## 5. Supabase contract, behavior and permissions
 
@@ -178,7 +192,7 @@ Supabase INSERT into maintenance_records
 | QR label/navigation | `QrCard.tsx`, `App.tsx` | `slug`, HashRouter route, hosting paths |
 | Login/roles | `AuthProvider.tsx`, `LoginModal.tsx`, `AppShell.tsx` | Supabase Auth, `maintenance_admins`, RLS |
 | Dashboard search/filter | `DashboardPage.tsx` | `equipment/queries.ts`, equipment type labels |
-| Shared UI style/component | `shared/ui/`, `style.css` | Existing usages in pages/forms |
+| Shared UI style/component | `shared/ui/`, `shared/styles/` | Existing usages in pages/forms |
 
 ## 8. Commands & agent completion checklist
 

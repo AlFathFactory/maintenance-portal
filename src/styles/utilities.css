@@ -1,0 +1,34 @@
+.empty-value {
+  color: #b4c2c3;
+  font-weight: 400;
+}
+.empty-state,
+.not-found {
+  text-align: center;
+  padding: 60px 20px;
+  color: #83999b;
+}
+.empty-state div {
+  font-size: 42px;
+  color: #9cb7ba;
+}
+.empty-state h3 {
+  color: #315156;
+  margin: 2px 0;
+}
+.empty-state p {
+  font-size: 12px;
+  margin: 0;
+}
+.loading {
+  text-align: center;
+  padding: 100px 20px;
+  color: #668488;
+}
+.not-found a {
+  color: #149a83;
+  font-weight: 700;
+}
+.not-found h1 {
+  color: #315057;
+}

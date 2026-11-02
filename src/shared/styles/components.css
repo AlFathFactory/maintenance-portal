@@ -1,0 +1,232 @@
+.page-intro h1,
+.detail-hero h1 {
+  margin: 0;
+  color: #183a40;
+  line-height: 1.5;
+  font-size: 27px;
+  font-weight: 800;
+}
+.list-heading h2,
+.panel-heading h2 {
+  margin: 0;
+  color: #244349;
+  font-size: 17px;
+}
+.list-heading p,
+.panel-heading p {
+  margin: 3px 0 0;
+  color: #9aabad;
+  font-size: 11px;
+}
+.equipment-icon {
+  height: 34px;
+  width: 34px;
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  background: #e7f6f2;
+  border-radius: 8px;
+  color: #189b84;
+  font-size: 19px;
+}
+.equipment-icon.crane {
+  background: #eaf3fb;
+  color: #4d8abd;
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  padding: 5px 9px;
+  font-size: 10px;
+  font-weight: 700;
+}
+.badge i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.badge.muted {
+  background: #eef2f3;
+  color: #788d92;
+}
+.badge.good {
+  background: #e8f7ef;
+  color: #238557;
+}
+.badge.warn {
+  background: #fff4e0;
+  color: #b27a1f;
+}
+.badge.bad {
+  background: #fff0ed;
+  color: #d36b59;
+}
+.error-banner {
+  background: #fff0ed;
+  border: 1px solid #f2c5bd;
+  color: #ae4e42;
+  padding: 12px 16px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  font-size: 12px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+.error-banner button {
+  border: 0;
+  background: none;
+  color: #a34136;
+  text-decoration: underline;
+  font-weight: 700;
+}
+.panel {
+  padding: 24px;
+}
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 23px 17px;
+  border-top: 1px solid #f0f3f3;
+  padding-top: 22px;
+}
+.field span {
+  display: block;
+  color: #9aabad;
+  font-size: 10px;
+  margin-bottom: 4px;
+}
+.field strong {
+  display: block;
+  color: #315056;
+  font-size: 12px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.qr-panel {
+  background: #0c3039;
+  color: #fff;
+  border-radius: 15px;
+  padding: 22px;
+  text-align: center;
+  box-shadow: 0 10px 24px #0e323922;
+}
+.qr-overline {
+  color: #61d3bf;
+  font-size: 10px;
+  font-weight: 700;
+}
+.qr-panel h2 {
+  font-size: 17px;
+  margin: 7px 0 2px;
+}
+.qr-panel p {
+  color: #a3bdc0;
+  font-size: 10px;
+  line-height: 1.7;
+  margin: 0 0 18px;
+}
+.qr-frame {
+  background: #fff;
+  border-radius: 11px;
+  width: 210px;
+  height: 210px;
+  margin: auto;
+  display: grid;
+  place-items: center;
+}
+.qr-frame canvas {
+  width: 190px !important;
+  height: 190px !important;
+}
+.qr-equipment {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  text-align: right;
+  border-bottom: 1px solid #31545b;
+  padding: 17px 0;
+  margin-bottom: 16px;
+  gap: 10px;
+}
+.qr-equipment strong {
+  font-size: 11px;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.qr-equipment span {
+  color: #90aeb1;
+  font:
+    11px Arial,
+    sans-serif;
+  direction: ltr;
+}
+.qr-download,
+.qr-print {
+  width: 100%;
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-size: 11px;
+  font-weight: 800;
+}
+.qr-download {
+  background: #1aa88e;
+  border: 1px solid #1aa88e;
+  color: #fff;
+}
+.qr-print {
+  margin-top: 7px;
+  background: transparent;
+  border: 1px solid #42646b;
+  color: #d0e3e5;
+}
+.toast {
+  position: fixed;
+  bottom: 22px;
+  left: 22px;
+  z-index: 60;
+  background: #123d42;
+  color: white;
+  border-radius: 9px;
+  padding: 12px 18px;
+  font-size: 12px;
+  box-shadow: 0 10px 25px #08252a44;
+}
+@media (max-width: 1100px) {
+  .qr-frame {
+    width: 195px;
+    height: 195px;
+  }
+  .qr-frame canvas {
+    width: 175px !important;
+    height: 175px !important;
+  }
+}
+@media (max-width: 760px) {
+  .qr-panel {
+    grid-row: span 2;
+  }
+  .field-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .panel {
+    padding: 19px;
+  }
+}
+@media (max-width: 530px) {
+  .qr-panel {
+    max-width: 340px;
+    margin: auto;
+  }
+  .field-grid {
+    gap: 19px 11px;
+  }
+  .field strong {
+    font-size: 11px;
+  }
+}

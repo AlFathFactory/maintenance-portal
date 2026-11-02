@@ -1,0 +1,48 @@
+@media print {
+  body {
+    background: white;
+  }
+  .sidebar,
+  .topbar,
+  .back-link,
+  .detail-main,
+  .hero-actions,
+  .qr-download,
+  .qr-print,
+  .last-service,
+  .toast {
+    display: none !important;
+  }
+  .app-shell {
+    display: block;
+  }
+  main {
+    padding: 0;
+  }
+  .detail-hero {
+    margin: 0 0 20px;
+  }
+  .detail-grid {
+    display: block;
+  }
+  .detail-side {
+    width: 90mm;
+    margin: 0 auto;
+  }
+  .qr-panel {
+    background: #fff;
+    color: #0c3039;
+    box-shadow: none;
+    border: 1px solid #ddd;
+  }
+  .qr-panel p,
+  .qr-overline {
+    color: #555;
+  }
+  .qr-equipment {
+    border-color: #ddd;
+  }
+  .qr-equipment span {
+    color: #555;
+  }
+}
