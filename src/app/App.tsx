@@ -15,6 +15,9 @@ const EquipmentPage = lazy(() =>
     default: module.EquipmentPage,
   })),
 );
+const TeamsPage = lazy(() =>
+  import('../features/teams/TeamsPage').then((module) => ({ default: module.TeamsPage })),
+);
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 1, refetchOnWindowFocus: false } },
 });
@@ -30,6 +33,7 @@ export function App() {
                 <Route element={<AppShell />}>
                   <Route index element={<DashboardPage />} />
                   <Route path="equipment/:slug" element={<EquipmentPage />} />
+                  <Route path="teams" element={<TeamsPage />} />
                   <Route
                     path="*"
                     element={

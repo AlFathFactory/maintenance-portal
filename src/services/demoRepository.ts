@@ -94,4 +94,22 @@ export const demoRepository: MaintenanceRepository = {
     write(data);
     return record;
   },
+  async listTeamDirectory() {
+    return { staff: [], teams: [], members: [], contacts: [], contactsRestricted: false };
+  },
+  async createStaff() {
+    throw new Error('إدارة الفريق متاحة عند الاتصال بقاعدة بيانات Supabase.');
+  },
+  async updateStaff() {
+    throw new Error('إدارة الفريق متاحة عند الاتصال بقاعدة بيانات Supabase.');
+  },
+  async deleteStaff() {
+    throw new Error('إدارة الفريق متاحة عند الاتصال بقاعدة بيانات Supabase.');
+  },
+  async assignStaff() {
+    throw new Error('إدارة الفريق متاحة عند الاتصال بقاعدة بيانات Supabase.');
+  },
+  async updateTeam() {
+    throw new Error('إدارة الفريق متاحة عند الاتصال بقاعدة بيانات Supabase.');
+  },
 };

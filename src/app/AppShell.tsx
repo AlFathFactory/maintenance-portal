@@ -10,6 +10,7 @@ export function AppShell() {
   const { user, isAdmin, loading, error, signOut } = useAuth();
   const toast = useToast();
   const detail = useLocation().pathname.startsWith('/equipment/');
+  const teamsPage = useLocation().pathname === '/teams';
 
   async function logout() {
     try {
@@ -41,6 +42,9 @@ export function AppShell() {
           <Link className="nav-item" to="/?type=crane">
             ♜ <span>الأوناش</span>
           </Link>
+          <NavLink to="/teams" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+            ♧ <span>فريق الصيانة</span>
+          </NavLink>
         </nav>
         <div className="sidebar-bottom">
           <div className="sidebar-note">
@@ -60,7 +64,8 @@ export function AppShell() {
             <strong>قسم الصيانة</strong>
           </div>
           <div className="breadcrumb">
-            قسم الصيانة <span>/</span> {detail ? 'تفاصيل المعدة' : 'لوحة المعدات'}
+            قسم الصيانة <span>/</span>{' '}
+            {detail ? 'تفاصيل المعدة' : teamsPage ? 'فريق الصيانة' : 'لوحة المعدات'}
           </div>
           <div className="top-actions">
             {env.isDemo && <span className="demo-pill">نسخة تجريبية محلية</span>}
@@ -89,6 +94,14 @@ export function AppShell() {
             )}
           </div>
         </header>
+        <nav className="mobile-nav" aria-label="التنقل على الهاتف">
+          <NavLink to="/" end className={({ isActive }) => (isActive ? 'active' : '')}>
+            المعدات
+          </NavLink>
+          <NavLink to="/teams" className={({ isActive }) => (isActive ? 'active' : '')}>
+            فريق الصيانة
+          </NavLink>
+        </nav>
         <main>
           {error && (
             <div className="error-banner" role="alert">

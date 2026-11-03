@@ -1,5 +1,6 @@
 import type { Equipment, EquipmentInput, EquipmentStatus } from '../domain/equipment';
 import type { MaintenanceInput, MaintenanceRecord } from '../domain/maintenance';
+import type { Staff, StaffInput, TeamDirectory } from '../features/teams/types';
 
 export interface MaintenanceRepository {
   listEquipment(): Promise<Equipment[]>;
@@ -9,4 +10,10 @@ export interface MaintenanceRepository {
   updateStatus(id: string, status: EquipmentStatus): Promise<Equipment>;
   listMaintenance(equipmentId: string): Promise<MaintenanceRecord[]>;
   createMaintenance(input: MaintenanceInput): Promise<MaintenanceRecord>;
+  listTeamDirectory(includeContacts: boolean): Promise<TeamDirectory>;
+  createStaff(input: StaffInput): Promise<Staff>;
+  updateStaff(id: string, input: StaffInput): Promise<void>;
+  deleteStaff(id: string): Promise<void>;
+  assignStaff(staffId: string, teamId: string | null): Promise<void>;
+  updateTeam(id: string, name: string, engineerId: string, leaderId: string): Promise<void>;
 }

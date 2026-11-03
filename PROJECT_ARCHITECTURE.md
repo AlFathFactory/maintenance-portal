@@ -2,7 +2,7 @@
 
 > **Read this file before modifying the project.** This is an architecture map and reuse guide, not a replacement for reading the actual files. Verify assumptions against the current code and Supabase before implementing changes.
 >
-> Repository: `AlFathFactory/maintenance-portal` · Branch inspected: `main` · Git tree: `77f42a9471e4b221ce748214a6a34d1dbe07508c` · Last reviewed: 2026-11-02.
+> Repository: `AlFathFactory/maintenance-portal` · Last updated: 2026-11-03.
 
 ## 1. What this system does
 
@@ -60,11 +60,17 @@ maintenance-portal/
     │   │   ├── EquipmentForm.tsx# Add/edit equipment
     │   │   ├── StatusForm.tsx   # Change equipment status
     │   │   └── queries.ts      # Equipment React Query hooks/mutations/keys
-    │   └── maintenance/
+    │   ├── maintenance/
     │       ├── MaintenanceForm.tsx    # Add repair / periodic maintenance
     │       ├── MaintenanceHistory.tsx # Read-only maintenance timeline
     │       ├── maintenance.css        # History empty state and timeline
     │       └── queries.ts            # Maintenance React Query hooks/mutations
+    │   └── teams/
+    │       ├── TeamsPage.tsx          # Public chart and admin entry points
+    │       ├── TeamDialogs.tsx        # Admin forms and delete confirmation
+    │       ├── queries.ts            # Team query keys and mutations
+    │       ├── types.ts              # Team data types
+    │       └── teams.css             # RTL hierarchy and responsive styles
     ├── services/
     │   ├── repository.ts         # MaintenanceRepository interface: data contract
     │   ├── index.ts              # Selects demoRepository or supabaseRepository
@@ -100,6 +106,7 @@ main.tsx
             └── AppShell                   # sidebar, header, auth controls, Outlet
                  ├── /                     # DashboardPage
                  └── /equipment/:slug      # EquipmentPage
+                 └── /teams                # TeamsPage: public organizational chart, admin actions
 
 UI (page/form)
   └── feature/queries.ts                   # useQuery / useMutation
@@ -123,6 +130,8 @@ Supabase INSERT into maintenance_records
 - **Read maintenance:** `EquipmentPage → useMaintenance(equipmentId, enabled) → repository.listMaintenance → maintenance_records`, ordered by `performed_on` descending.
 - **Create maintenance:** `MaintenanceForm → useCreateMaintenance → repository.createMaintenance → maintenance_records`; successful mutation invalidates `['maintenance', equipmentId]` and `['equipment']`; the database trigger updates the equipment summary.
 - **Admin access:** `AuthProvider` receives Supabase Auth session, then checks `maintenance_admins` for the current user; `useAuth().isAdmin` controls frontend action visibility. **RLS is the actual security boundary.**
+- **Team directory:** `TeamsPage → useTeamDirectory(isAdmin) → repository.listTeamDirectory` reads staff, teams, memberships and, for admins, contacts. Public access never requests phone numbers. Team query caches are cleared on sign-out.
+- **Team administration:** `TeamDialogs → useTeamActions → repository` handles staff, assignments and team updates. Membership transfers use one row update. Staff create and delete use compensating cleanup when a dependent request fails; these browser requests are not a database transaction.
 
 ## 4. Reuse before creating anything new
 
@@ -146,7 +155,7 @@ Supabase INSERT into maintenance_records
 
 **Feature-placement rule:** feature-specific UI/hooks and CSS go under `src/features/<feature>/`; cross-feature primitives and styles under `src/shared/`; entity types under `src/domain/`; all remote/local data access under `src/services/`.
 
-**Styling convention:** `src/main.tsx` imports CSS in an explicit order: global foundations, shell, shared buttons, dashboard, shared components, utilities, equipment detail, maintenance, modal, forms, then print. Keep responsive rules beside their base selectors and print rules in `src/styles/print.css`. Add new styles to the owning feature or shared stylesheet, preserving existing class names and RTL behavior. Place future CSS variables in `src/styles/globals.css`.
+**Styling convention:** `src/main.tsx` imports CSS in an explicit order: global foundations, shell, shared buttons, dashboard, shared components, utilities, equipment detail, maintenance, teams, modal, forms, then print. Keep responsive rules beside their base selectors and print rules in `src/styles/print.css`. Add new styles to the owning feature or shared stylesheet, preserving existing class names and RTL behavior. Place future CSS variables in `src/styles/globals.css`.
 
 ## 5. Supabase contract, behavior and permissions
 
@@ -157,6 +166,10 @@ Supabase INSERT into maintenance_records
 | `public.equipment` | `id` UUID, unique `slug`, `type`, `name`, specs, `status`, `last_maintenance_on` | Public inventory and equipment profile. |
 | `public.maintenance_records` | `id`, `equipment_id` FK, `kind`, `performed_on`, `notes`, `status_after`, `created_by`, `created_at` | Maintenance history, repairs, periodic services. |
 | `public.maintenance_admins` | `user_id` FK to `auth.users` | Authorized maintenance admins. |
+| `public.maintenance_staff` | `id`, `full_name`, `role` | People in the department. |
+| `public.maintenance_teams` | `id`, `name`, `engineer_id`, `leader_id` | Team branches and their leads. |
+| `public.maintenance_team_members` | `team_id`, `staff_id` | Unique team assignment per staff member. |
+| `public.maintenance_staff_contacts` | `staff_id`, `phone` | Admin-only phone details. |
 
 - Equipment types: `machine` and `crane`.
 - Equipment statuses: `unknown`, `operational`, `out_of_service`, `maintenance`.
@@ -167,6 +180,7 @@ Supabase INSERT into maintenance_records
 - No deployed Edge Functions were found at review time; the project is not using a separate custom HTTP backend.
 - `supabase/schema.sql` represents the **original** schema and contains the old admin-only maintenance SELECT policy: **do not reapply it blindly** or treat it as an up-to-date migration history. Current backend state must be checked before migrations/changes. There were no recorded migrations at review time.
 - Security: public Supabase client uses the **publishable key only**. Never expose `service_role`/secret keys, and never depend on hidden buttons for authorization.
+- Team tables are live backend tables with public `SELECT` on staff, teams and memberships, admin-only writes, and admin-only contact access. No schema or RLS changes were made for the team UI. The chart derives leader placement from `maintenance_teams.leader_id`; a leader is omitted from the technician list even if a membership row remains. The demo repository returns an empty directory and reports that edits require Supabase, because there is no employee demo seed.
 
 ## 6. Key implementation rules for AI agents
 

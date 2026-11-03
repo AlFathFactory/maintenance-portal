@@ -82,6 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { error: signOutError } = await supabase.auth.signOut();
         if (signOutError) throw signOutError;
         queryClient.removeQueries({ queryKey: ['maintenance'] });
+        queryClient.removeQueries({ queryKey: ['teams'] });
         setIsAdmin(false);
       },
     }),

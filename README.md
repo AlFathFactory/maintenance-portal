@@ -31,4 +31,4 @@ node scripts/check-supabase.mjs
 `supabase/schema.sql` يجهز الجداول والصلاحيات، و`supabase/seed.sql` يضيف المعدات الأصلية. ملاحظات الصيانة متاحة فقط لمسؤول مسجل في `maintenance_admins`؛ ملف المعدة العام يعرض تفاصيلها وحالتها وتاريخ آخر صيانة. لإضافة مسؤول، أنشئ مستخدمًا في **Authentication > Users** ثم أضف UUID الخاص به بالأمر أسفل `schema.sql`.
 
 صور وPDF الصيانة مؤجلة حسب النطاق الحالي. عند إضافتها لاحقًا تُنشأ طبقة تخزين مستقلة مع سياسات وصول مناسبة.
-"# maintenance-portal" 
+"# maintenance-portal"

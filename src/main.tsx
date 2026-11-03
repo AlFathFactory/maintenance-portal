@@ -9,6 +9,7 @@ import './shared/styles/components.css';
 import './styles/utilities.css';
 import './features/equipment/equipment.css';
 import './features/maintenance/maintenance.css';
+import './features/teams/teams.css';
 import './shared/styles/modal.css';
 import './shared/styles/forms.css';
 import './styles/print.css';
