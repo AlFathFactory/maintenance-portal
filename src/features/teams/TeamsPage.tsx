@@ -45,9 +45,9 @@ function TeamBranch({
   return (
     <section className={`teams-branch teams-branch-${index % 2}`} aria-label={`فريق ${team.name}`}>
       <div className="teams-branch-head">
-        <div className="teams-branch-symbol" aria-hidden="true">
+        {/* <div className="teams-branch-symbol" aria-hidden="true">
           {index % 2 === 0 ? '⚙' : 'ϟ'}
-        </div>
+        </div> */}
         <div>
           <span className="teams-overline">فريق الصيانة</span>
           <h2>{team.name}</h2>
@@ -188,7 +188,7 @@ export function TeamsPage() {
                   key={staff.id}
                   staff={staff}
                   kind="engineer"
-                  role="الإشراف على الفرق"
+                  // role="الإشراف على الفرق"
                   directory={directory}
                   admin={canManage}
                   mobile

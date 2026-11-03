@@ -5,17 +5,17 @@ import type { Staff, TeamDirectory } from './types';
 
 type StaffKind = 'engineer' | 'leader' | 'technician';
 
-function RoleIcon({ kind }: { kind: StaffKind }) {
-  return (
-    <span className={`teams-role-icon teams-role-icon-${kind}`} aria-hidden="true">
-      {kind === 'engineer' ? '✦' : kind === 'leader' ? '◆' : '⚙'}
-    </span>
-  );
-}
+// function RoleIcon({ kind }: { kind: StaffKind }) {
+//   return (
+//     <span className={`teams-role-icon teams-role-icon-${kind}`} aria-hidden="true">
+//       {kind === 'engineer' ? '✦' : kind === 'leader' ? '◆' : '⚙'}
+//     </span>
+//   );
+// }
 
 export function StaffRow({
   staff,
-  kind,
+  // kind,
   role,
   directory,
   admin,
@@ -44,7 +44,7 @@ export function StaffRow({
 
   return (
     <article className={`teams-person${mobile ? ' teams-person-mobile' : ''}`}>
-      {mobile && <RoleIcon kind={kind} />}
+      {/* {mobile && <RoleIcon kind={kind} />} */}
       <div className="teams-person-info">
         <div className="teams-person-name">
           <strong>{staff.full_name}</strong>
