@@ -419,7 +419,11 @@
     font-size: 19px;
   }
   .teams-branch-head h2 {
-    font-size: 16px;
+    font-size: 15px;
+  }
+  .teams-branch-head .teams-overline,
+  .teams-branch .teams-section-label {
+    font-size: 10px;
   }
   .teams-branch-body {
     padding: 10px 8px;
@@ -430,6 +434,12 @@
     padding: 8px;
     text-align: center;
   }
+  .teams-branch .teams-person-info strong {
+    font-size: 13px;
+  }
+  .teams-branch .teams-role {
+    font-size: 9px;
+  }
   .teams-branch .teams-person-actions {
     align-self: center;
     justify-content: center;
@@ -439,9 +449,11 @@
   .teams-count {
     margin-inline-start: 0;
     padding: 5px 8px;
+    font-size: 10px;
   }
   .teams-edit-team {
     width: 100%;
+    font-size: 10px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
