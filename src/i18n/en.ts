@@ -152,7 +152,7 @@ export const en = {
     download: 'Download QR code',
     print: 'Print card',
     canvasLine1: 'Scan QR code',
-    canvasLine2: 'to open equipment profile',
+    canvasLine2: 'to open Machine profile',
     loading: 'Preparing secure QR code...',
     rotate: 'Rotate QR code',
     rotateTitle: 'Rotate access code',
