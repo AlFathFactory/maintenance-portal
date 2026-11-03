@@ -74,7 +74,7 @@ export const supabaseRepository: MaintenanceRepository = {
     if (error) throw error;
     return data;
   },
-  async listTeamDirectory(includeContacts) {
+  async listTeamDirectory() {
     const db = client();
     const [staffResult, teamsResult, membersResult] = await Promise.all([
       db.from('maintenance_staff').select('id,full_name,role').order('full_name'),
@@ -84,13 +84,9 @@ export const supabaseRepository: MaintenanceRepository = {
     if (staffResult.error) throw staffResult.error;
     if (teamsResult.error) throw teamsResult.error;
     if (membersResult.error) throw membersResult.error;
-    let contacts: StaffContact[] = [];
-    let contactsRestricted = false;
-    if (includeContacts) {
-      const result = await db.from('maintenance_staff_contacts').select('staff_id,phone');
-      if (result.error) contactsRestricted = true;
-      else contacts = result.data as StaffContact[];
-    }
+    const contactsResult = await db.from('maintenance_staff_contacts').select('staff_id,phone');
+    const contactsRestricted = Boolean(contactsResult.error);
+    const contacts = contactsResult.error ? [] : (contactsResult.data as StaffContact[]);
     return {
       staff: staffResult.data as Staff[],
       teams: teamsResult.data as Team[],

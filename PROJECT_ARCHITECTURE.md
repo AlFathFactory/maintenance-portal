@@ -67,6 +67,7 @@ maintenance-portal/
     │       └── queries.ts            # Maintenance React Query hooks/mutations
     │   └── teams/
     │       ├── TeamsPage.tsx          # Public chart and admin entry points
+    │       ├── CallButton.tsx         # Reusable public tel link with validation
     │       ├── TeamDialogs.tsx        # Admin forms and delete confirmation
     │       ├── queries.ts            # Team query keys and mutations
     │       ├── types.ts              # Team data types
@@ -130,7 +131,7 @@ Supabase INSERT into maintenance_records
 - **Read maintenance:** `EquipmentPage → useMaintenance(equipmentId, enabled) → repository.listMaintenance → maintenance_records`, ordered by `performed_on` descending.
 - **Create maintenance:** `MaintenanceForm → useCreateMaintenance → repository.createMaintenance → maintenance_records`; successful mutation invalidates `['maintenance', equipmentId]` and `['equipment']`; the database trigger updates the equipment summary.
 - **Admin access:** `AuthProvider` receives Supabase Auth session, then checks `maintenance_admins` for the current user; `useAuth().isAdmin` controls frontend action visibility. **RLS is the actual security boundary.**
-- **Team directory:** `TeamsPage → useTeamDirectory(isAdmin) → repository.listTeamDirectory` reads staff, teams, memberships and, for admins, contacts. Public access never requests phone numbers. Team query caches are cleared on sign-out.
+- **Team directory:** `TeamsPage → useTeamDirectory() → repository.listTeamDirectory` reads staff, teams, memberships and public contact numbers. `CallButton` shows a validated `tel:` link when a number exists. Team query caches are cleared on sign-out; contact writes remain admin-only.
 - **Team administration:** `TeamDialogs → useTeamActions → repository` handles staff, assignments and team updates. Membership transfers use one row update. Staff create and delete use compensating cleanup when a dependent request fails; these browser requests are not a database transaction.
 
 ## 4. Reuse before creating anything new
@@ -169,7 +170,7 @@ Supabase INSERT into maintenance_records
 | `public.maintenance_staff` | `id`, `full_name`, `role` | People in the department. |
 | `public.maintenance_teams` | `id`, `name`, `engineer_id`, `leader_id` | Team branches and their leads. |
 | `public.maintenance_team_members` | `team_id`, `staff_id` | Unique team assignment per staff member. |
-| `public.maintenance_staff_contacts` | `staff_id`, `phone` | Admin-only phone details. |
+| `public.maintenance_staff_contacts` | `staff_id`, `phone` | Public phone details; admin-only writes. |
 
 - Equipment types: `machine` and `crane`.
 - Equipment statuses: `unknown`, `operational`, `out_of_service`, `maintenance`.
@@ -180,7 +181,7 @@ Supabase INSERT into maintenance_records
 - No deployed Edge Functions were found at review time; the project is not using a separate custom HTTP backend.
 - `supabase/schema.sql` represents the **original** schema and contains the old admin-only maintenance SELECT policy: **do not reapply it blindly** or treat it as an up-to-date migration history. Current backend state must be checked before migrations/changes. There were no recorded migrations at review time.
 - Security: public Supabase client uses the **publishable key only**. Never expose `service_role`/secret keys, and never depend on hidden buttons for authorization.
-- Team tables are live backend tables with public `SELECT` on staff, teams and memberships, admin-only writes, and admin-only contact access. No schema or RLS changes were made for the team UI. The chart derives leader placement from `maintenance_teams.leader_id`; a leader is omitted from the technician list even if a membership row remains. The demo repository returns an empty directory and reports that edits require Supabase, because there is no employee demo seed.
+- Team tables are live backend tables with public `SELECT` on staff, teams, memberships and contacts, plus admin-only writes. No schema or RLS changes were made for the team UI. The chart derives leader placement from `maintenance_teams.leader_id`; a leader is omitted from the technician list even if a membership row remains. The demo repository returns an empty directory and reports that edits require Supabase, because there is no employee demo seed.
 
 ## 6. Key implementation rules for AI agents
 

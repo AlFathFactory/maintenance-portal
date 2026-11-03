@@ -3,6 +3,7 @@ import { env } from '../../config/env';
 import { useAuth } from '../auth/AuthProvider';
 import { ErrorMessage } from '../../shared/ui/ErrorMessage';
 import { TeamDialogs, type TeamDialog } from './TeamDialogs';
+import { CallButton } from './CallButton';
 import { useTeamDirectory } from './queries';
 import type { Staff, Team, TeamDirectory } from './types';
 
@@ -26,54 +27,49 @@ function PersonCard({
   return (
     <article className="teams-person">
       <div className="teams-person-info">
-        <strong>{staff.full_name}</strong>
+        <div className="teams-person-name">
+          <strong>{staff.full_name}</strong>
+          <CallButton name={staff.full_name} phone={phone} />
+        </div>
         {role && <span className="teams-role">{role}</span>}
       </div>
-      <div className="teams-person-actions">
-        {phone && (
-          <a
-            className="teams-call"
-            href={`tel:${phone.replace(/[^+\d]/g, '')}`}
-            aria-label={`اتصال بـ ${staff.full_name}`}
-            title={phone}
-          >
-            ☎
-          </a>
-        )}
-        {admin && (
-          <button
-            type="button"
-            className="teams-icon-button"
-            onClick={() => onAction({ kind: 'staff', staff })}
-            aria-label={`تعديل ${staff.full_name}`}
-            title="تعديل"
-          >
-            ✎
-          </button>
-        )}
-        {admin && !protectedStaff && staff.role !== 'engineer' && (
-          <button
-            type="button"
-            className="teams-icon-button"
-            onClick={() => onAction({ kind: 'assign', staff })}
-            aria-label={`توزيع ${staff.full_name}`}
-            title="توزيع الفريق"
-          >
-            ↔
-          </button>
-        )}
-        {admin && !protectedStaff && (
-          <button
-            type="button"
-            className="teams-icon-button teams-icon-danger"
-            onClick={() => onAction({ kind: 'delete', staff })}
-            aria-label={`حذف ${staff.full_name}`}
-            title="حذف"
-          >
-            ×
-          </button>
-        )}
-      </div>
+      {admin && (
+        <div className="teams-person-actions">
+          {
+            <button
+              type="button"
+              className="teams-icon-button"
+              onClick={() => onAction({ kind: 'staff', staff })}
+              aria-label={`تعديل ${staff.full_name}`}
+              title="تعديل"
+            >
+              ✎
+            </button>
+          }
+          {!protectedStaff && staff.role !== 'engineer' && (
+            <button
+              type="button"
+              className="teams-icon-button"
+              onClick={() => onAction({ kind: 'assign', staff })}
+              aria-label={`توزيع ${staff.full_name}`}
+              title="توزيع الفريق"
+            >
+              ↔
+            </button>
+          )}
+          {!protectedStaff && (
+            <button
+              type="button"
+              className="teams-icon-button teams-icon-danger"
+              onClick={() => onAction({ kind: 'delete', staff })}
+              aria-label={`حذف ${staff.full_name}`}
+              title="حذف"
+            >
+              ×
+            </button>
+          )}
+        </div>
+      )}
     </article>
   );
 }
@@ -159,7 +155,7 @@ function TeamBranch({
 
 export function TeamsPage() {
   const { isAdmin, loading: authLoading } = useAuth();
-  const directoryQuery = useTeamDirectory(isAdmin && !authLoading);
+  const directoryQuery = useTeamDirectory();
   const [dialog, setDialog] = useState<TeamDialog | null>(null);
   const directory = directoryQuery.data;
   const engineerIds = new Set(directory?.teams.map((team) => team.engineer_id) ?? []);

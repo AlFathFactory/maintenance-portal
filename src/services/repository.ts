@@ -10,7 +10,7 @@ export interface MaintenanceRepository {
   updateStatus(id: string, status: EquipmentStatus): Promise<Equipment>;
   listMaintenance(equipmentId: string): Promise<MaintenanceRecord[]>;
   createMaintenance(input: MaintenanceInput): Promise<MaintenanceRecord>;
-  listTeamDirectory(includeContacts: boolean): Promise<TeamDirectory>;
+  listTeamDirectory(): Promise<TeamDirectory>;
   createStaff(input: StaffInput): Promise<Staff>;
   updateStaff(id: string, input: StaffInput): Promise<void>;
   deleteStaff(id: string): Promise<void>;

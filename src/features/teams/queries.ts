@@ -4,13 +4,13 @@ import type { StaffInput } from './types';
 
 export const teamKeys = {
   all: ['teams'] as const,
-  directory: (includeContacts: boolean) => ['teams', 'directory', includeContacts] as const,
+  directory: ['teams', 'directory'] as const,
 };
 
-export function useTeamDirectory(includeContacts: boolean) {
+export function useTeamDirectory() {
   return useQuery({
-    queryKey: teamKeys.directory(includeContacts),
-    queryFn: () => repository.listTeamDirectory(includeContacts),
+    queryKey: teamKeys.directory,
+    queryFn: () => repository.listTeamDirectory(),
   });
 }
 
