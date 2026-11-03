@@ -9,12 +9,28 @@ export function QrCard({ equipment }: { equipment: Equipment }) {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const address = `${window.location.origin}${window.location.pathname}#/equipment/${encodeURIComponent(equipment.slug)}`;
-    void QRCode.toCanvas(canvas, address, {
+    const qrCanvas = document.createElement('canvas');
+    void QRCode.toCanvas(qrCanvas, address, {
       width: 190,
       margin: 1,
       color: { dark: '#0b2b34', light: '#ffffff' },
     })
-      .then(() => setError(''))
+      .then(() => {
+        const context = canvas.getContext('2d');
+        if (!context) throw new Error('Canvas is unavailable');
+
+        canvas.width = 190;
+        canvas.height = 236;
+        context.fillStyle = '#ffffff';
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        context.fillStyle = '#0b2b34';
+        context.font = 'bold 12px Arial, sans-serif';
+        context.textAlign = 'center';
+        context.fillText('Scan QR,', canvas.width / 2, 18);
+        context.fillText('Maintenance equipment.', canvas.width / 2, 35);
+        context.drawImage(qrCanvas, 0, 46);
+        setError('');
+      })
       .catch(() => setError('تعذر إنشاء رمز QR.'));
   }, [equipment.slug]);
 
