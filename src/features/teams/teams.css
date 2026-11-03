@@ -383,27 +383,23 @@
     margin-bottom: 24px;
   }
   .teams-branches {
-    grid-template-columns: 1fr;
-    gap: 25px;
-    padding-top: 32px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    padding-top: 48px;
   }
   .teams-branches::before {
-    height: 32px;
+    height: 23px;
   }
   .teams-branches::after {
-    display: none;
+    top: 22px;
   }
   .teams-branch::before {
-    display: none;
-  }
-  .teams-branch + .teams-branch::before {
-    display: block;
-    height: 25px;
-    right: 50%;
+    height: 26px;
   }
   .teams-skeleton-grid {
-    grid-template-columns: 1fr;
-    margin-top: 30px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 48px;
   }
 }
 @media (max-width: 530px) {
@@ -414,13 +410,38 @@
     justify-self: start;
   }
   .teams-branch-head {
-    gap: 9px;
+    gap: 7px;
+    padding: 12px 9px;
+  }
+  .teams-branch-symbol {
+    width: 32px;
+    height: 32px;
+    font-size: 19px;
+  }
+  .teams-branch-head h2 {
+    font-size: 16px;
+  }
+  .teams-branch-body {
+    padding: 10px 8px;
+  }
+  .teams-branch .teams-person {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 8px;
+    text-align: center;
+  }
+  .teams-branch .teams-person-actions {
+    align-self: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-inline-start: 0;
   }
   .teams-count {
     margin-inline-start: 0;
+    padding: 5px 8px;
   }
   .teams-edit-team {
-    margin-inline-start: auto;
+    width: 100%;
   }
 }
 @media (prefers-reduced-motion: reduce) {
