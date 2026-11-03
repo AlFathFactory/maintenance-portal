@@ -27,15 +27,13 @@ function PersonCard({
   return (
     <article className="teams-person">
       <div className="teams-person-info">
-        <div className="teams-person-name">
-          <strong>{staff.full_name}</strong>
-          <CallButton name={staff.full_name} phone={phone} />
-        </div>
+        <strong>{staff.full_name}</strong>
         {role && <span className="teams-role">{role}</span>}
       </div>
-      {admin && (
+      {(phone || admin) && (
         <div className="teams-person-actions">
-          {
+          <CallButton name={staff.full_name} phone={phone} />
+          {admin && (
             <button
               type="button"
               className="teams-icon-button"
@@ -45,8 +43,8 @@ function PersonCard({
             >
               ✎
             </button>
-          }
-          {!protectedStaff && staff.role !== 'engineer' && (
+          )}
+          {admin && !protectedStaff && staff.role !== 'engineer' && (
             <button
               type="button"
               className="teams-icon-button"
@@ -57,7 +55,7 @@ function PersonCard({
               ↔
             </button>
           )}
-          {!protectedStaff && (
+          {admin && !protectedStaff && (
             <button
               type="button"
               className="teams-icon-button teams-icon-danger"
