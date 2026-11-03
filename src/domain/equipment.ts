@@ -9,6 +9,26 @@ export const equipmentStatuses = [
 ] as const;
 export type EquipmentStatus = (typeof equipmentStatuses)[number];
 
+export const equipmentTextFields = [
+  'name',
+  'model',
+  'power',
+  'length_spec',
+  'p_spec',
+  'made_in',
+  'location',
+  'max_load',
+  'height',
+  'width',
+] as const;
+export type EquipmentTextField = (typeof equipmentTextFields)[number];
+export type EquipmentText = Record<EquipmentTextField, string>;
+export type EquipmentLocale = 'ar' | 'en';
+export type EquipmentTranslation = EquipmentText & {
+  equipment_id: string;
+  locale: EquipmentLocale;
+};
+
 export interface Equipment {
   id: string;
   slug: string;
@@ -26,29 +46,17 @@ export interface Equipment {
   width: string;
   status: EquipmentStatus;
   last_maintenance_on: string | null;
+  translations?: Partial<Record<EquipmentLocale, EquipmentText>>;
 }
 
-export type EquipmentInput = Pick<
-  Equipment,
-  | 'type'
-  | 'name'
-  | 'code'
-  | 'model'
-  | 'power'
-  | 'length_spec'
-  | 'p_spec'
-  | 'made_in'
-  | 'location'
-  | 'max_load'
-  | 'height'
-  | 'width'
->;
-
-export const statusDetails: Record<EquipmentStatus, { label: string; tone: string }> = {
-  unknown: { label: 'غير محددة', tone: 'muted' },
-  operational: { label: 'تعمل', tone: 'good' },
-  out_of_service: { label: 'خارج الخدمة', tone: 'bad' },
-  maintenance: { label: 'تحت الصيانة', tone: 'warn' },
+export type EquipmentInput = Pick<Equipment, 'type' | 'code'> & {
+  ar: EquipmentText;
+  en: EquipmentText;
 };
 
-export const typeLabels: Record<EquipmentType, string> = { machine: 'ماكينة', crane: 'ونش' };
+export const statusDetails: Record<EquipmentStatus, { tone: string }> = {
+  unknown: { tone: 'muted' },
+  operational: { tone: 'good' },
+  out_of_service: { tone: 'bad' },
+  maintenance: { tone: 'warn' },
+};

@@ -30,7 +30,7 @@
 }
 .modal-close {
   position: absolute;
-  left: 20px;
+  inset-inline-end: 20px;
   top: 15px;
   border: 0;
   background: transparent;

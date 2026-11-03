@@ -1,6 +1,9 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { typeLabels, type Equipment } from '../../domain/equipment';
+import type { Equipment, EquipmentTextField } from '../../domain/equipment';
+import { equipmentText } from '../../domain/localizedEquipment';
+import type { AppLanguage } from '../../i18n';
 import { useAuth } from '../auth/AuthProvider';
 import { useMaintenance } from '../maintenance/queries';
 import { MaintenanceForm } from '../maintenance/MaintenanceForm';
@@ -18,23 +21,24 @@ import { StatusForm } from './StatusForm';
 type FormKind = 'equipment' | 'status' | 'maintenance' | null;
 
 function EquipmentFields({ item }: { item: Equipment }) {
-  const fields = [
-    ['الاسم', item.name],
-    ['الكود', item.code],
-    ['الموديل', item.model],
-    ['القدرة', item.power],
-    ['بلد الصنع', item.made_in],
-    ['الموقع', item.location],
+  const { t, i18n } = useTranslation();
+  const language: AppLanguage = i18n.language === 'en' ? 'en' : 'ar';
+  const fields: [string, string][] = [
+    [t('equipment.name'), equipmentText(item, 'name', language)],
+    [t('equipment.code'), item.code],
+    ...(['model', 'power', 'made_in', 'location'] as EquipmentTextField[]).map(
+      (field) =>
+        [t(`equipment.${field}`), equipmentText(item, field, language)] as [string, string],
+    ),
     ...(item.type === 'crane'
-      ? [
-          ['الحمولة القصوى', item.max_load],
-          ['الارتفاع', item.height],
-          ['العرض', item.width],
-        ]
-      : [
-          ['L', item.length_spec],
-          ['P', item.p_spec],
-        ]),
+      ? (['max_load', 'height', 'width'] as EquipmentTextField[]).map(
+          (field) =>
+            [t(`equipment.${field}`), equipmentText(item, field, language)] as [string, string],
+        )
+      : (['length_spec', 'p_spec'] as EquipmentTextField[]).map(
+          (field) =>
+            [t(`equipment.${field}`), equipmentText(item, field, language)] as [string, string],
+        )),
   ];
   return (
     <div className="field-grid">
@@ -46,6 +50,8 @@ function EquipmentFields({ item }: { item: Equipment }) {
 }
 
 export function EquipmentPage() {
+  const { t, i18n } = useTranslation();
+  const language: AppLanguage = i18n.language === 'en' ? 'en' : 'ar';
   const { slug = '' } = useParams();
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
@@ -53,41 +59,44 @@ export function EquipmentPage() {
   const query = useEquipment(slug);
   const item = query.data;
   const history = useMaintenance(item?.id ?? '', true);
-  if (query.isPending) return <div className="loading">جارٍ تحميل ملف المعدة...</div>;
+  if (query.isPending) return <div className="loading">{t('equipment.loading')}</div>;
   if (query.error) return <ErrorMessage error={query.error} retry={() => void query.refetch()} />;
   if (!item)
     return (
       <div className="not-found">
-        <h1>المعدة غير موجودة</h1>
-        <Link to="/">العودة إلى المعدات</Link>
+        <h1>{t('equipment.notFound')}</h1>
+        <Link to="/">{t('equipment.back')}</Link>
       </div>
     );
 
   return (
     <div className="detail">
       <Link to="/" className="back-link">
-        → العودة إلى المعدات
+        {language === 'ar' ? '→' : '←'} {t('equipment.back')}
       </Link>
       <div className="detail-hero">
         <div>
           <div className="detail-kicker">
             <EquipmentIcon type={item.type} />
-            {typeLabels[item.type]} <span className="divider-dot">•</span> {item.code || item.slug}
+            {t(`equipmentType.${item.type}`)} <span className="divider-dot">•</span>{' '}
+            {item.code || item.slug}
           </div>
-          <h1>{item.name}</h1>
+          <h1 dir="auto">{equipmentText(item, 'name', language)}</h1>
           <div className="hero-meta">
             <StatusBadge status={item.status} />
-            <span>⌖ {item.location || 'الموقع غير مسجل'}</span>
+            <span>
+              ⌖ {equipmentText(item, 'location', language) || t('equipment.locationMissing')}
+            </span>
           </div>
         </div>
         <div className="hero-actions">
           {isAdmin && (
             <>
               <button className="outline-button" onClick={() => setForm('equipment')}>
-                تعديل البيانات
+                {t('equipment.edit')}
               </button>
               <button className="primary-button" onClick={() => setForm('status')}>
-                تغيير الحالة
+                {t('equipment.changeStatus')}
               </button>
             </>
           )}
@@ -98,8 +107,8 @@ export function EquipmentPage() {
           <section className="panel">
             <div className="panel-heading">
               <div>
-                <h2>بيانات المعدة</h2>
-                <p>المعلومات الثابتة الواردة في سجل المعدات.</p>
+                <h2>{t('equipment.details')}</h2>
+                <p>{t('equipment.detailsHint')}</p>
               </div>
             </div>
             <EquipmentFields item={item} />
@@ -107,17 +116,17 @@ export function EquipmentPage() {
           <section className="panel history-panel">
             <div className="panel-heading">
               <div>
-                <h2>سجل الصيانة</h2>
-                <p>كل عمليات الصيانة المسجلة لهذه المعدة.</p>
+                <h2>{t('equipment.history')}</h2>
+                <p>{t('equipment.historyHint')}</p>
               </div>
               {isAdmin && (
                 <button className="small-primary" onClick={() => setForm('maintenance')}>
-                  ＋ تسجيل صيانة
+                  ＋ {t('equipment.recordMaintenance')}
                 </button>
               )}
             </div>
             {history.isPending ? (
-              <div className="loading">جارٍ تحميل سجل الصيانة...</div>
+              <div className="loading">{t('equipment.historyLoading')}</div>
             ) : history.error ? (
               <ErrorMessage error={history.error} retry={() => void history.refetch()} />
             ) : (
@@ -130,7 +139,7 @@ export function EquipmentPage() {
           <section className="last-service">
             <span className="service-icon">⚙</span>
             <div>
-              <small>آخر صيانة مسجلة</small>
+              <small>{t('equipment.lastRecorded')}</small>
               <strong>{formatDate(item.last_maintenance_on)}</strong>
             </div>
           </section>

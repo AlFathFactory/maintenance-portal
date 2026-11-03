@@ -47,7 +47,10 @@ export const demoRepository: MaintenanceRepository = {
   async createEquipment(input: EquipmentInput) {
     const data = read();
     const item: Equipment = {
-      ...input,
+      ...input.ar,
+      type: input.type,
+      code: input.code,
+      translations: { ar: input.ar, en: input.en },
       id: crypto.randomUUID(),
       slug: `equipment-${crypto.randomUUID().slice(0, 10)}`,
       status: 'unknown',
@@ -60,15 +63,19 @@ export const demoRepository: MaintenanceRepository = {
   async updateEquipment(id: string, input: EquipmentInput) {
     const data = read();
     const item = data.equipment.find((entry) => entry.id === id);
-    if (!item) throw new Error('المعدة غير موجودة.');
-    Object.assign(item, input);
+    if (!item) throw new Error('EQUIPMENT_NOT_FOUND');
+    Object.assign(item, input.ar, {
+      type: input.type,
+      code: input.code,
+      translations: { ar: input.ar, en: input.en },
+    });
     write(data);
     return item;
   },
   async updateStatus(id: string, status: EquipmentStatus) {
     const data = read();
     const item = data.equipment.find((entry) => entry.id === id);
-    if (!item) throw new Error('المعدة غير موجودة.');
+    if (!item) throw new Error('EQUIPMENT_NOT_FOUND');
     item.status = status;
     write(data);
     return item;
@@ -81,7 +88,7 @@ export const demoRepository: MaintenanceRepository = {
   async createMaintenance(input: MaintenanceInput) {
     const data = read();
     const item = data.equipment.find((entry) => entry.id === input.equipment_id);
-    if (!item) throw new Error('المعدة غير موجودة.');
+    if (!item) throw new Error('EQUIPMENT_NOT_FOUND');
     const record: MaintenanceRecord = {
       ...input,
       id: crypto.randomUUID(),
@@ -98,18 +105,18 @@ export const demoRepository: MaintenanceRepository = {
     return { staff: [], teams: [], members: [], contacts: [], contactsRestricted: false };
   },
   async createStaff() {
-    throw new Error('إدارة الفريق متاحة عند الاتصال بقاعدة بيانات Supabase.');
+    throw new Error('TEAM_DEMO_UNAVAILABLE');
   },
   async updateStaff() {
-    throw new Error('إدارة الفريق متاحة عند الاتصال بقاعدة بيانات Supabase.');
+    throw new Error('TEAM_DEMO_UNAVAILABLE');
   },
   async deleteStaff() {
-    throw new Error('إدارة الفريق متاحة عند الاتصال بقاعدة بيانات Supabase.');
+    throw new Error('TEAM_DEMO_UNAVAILABLE');
   },
   async assignStaff() {
-    throw new Error('إدارة الفريق متاحة عند الاتصال بقاعدة بيانات Supabase.');
+    throw new Error('TEAM_DEMO_UNAVAILABLE');
   },
   async updateTeam() {
-    throw new Error('إدارة الفريق متاحة عند الاتصال بقاعدة بيانات Supabase.');
+    throw new Error('TEAM_DEMO_UNAVAILABLE');
   },
 };

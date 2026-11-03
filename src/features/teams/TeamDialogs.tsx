@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ErrorMessage } from '../../shared/ui/ErrorMessage';
 import { Modal } from '../../shared/ui/Modal';
 import { useToast } from '../../shared/ui/ToastProvider';
@@ -24,6 +25,7 @@ export function TeamDialogs({
   directory: TeamDirectory;
   onClose(): void;
 }) {
+  const { t } = useTranslation();
   const [error, setError] = useState<unknown>(null);
   const actions = useTeamActions();
   const toast = useToast();
@@ -36,9 +38,8 @@ export function TeamDialogs({
     const form = new FormData(event.currentTarget);
     const fullName = String(form.get('full_name') ?? '').trim();
     const phone = String(form.get('phone') ?? '').trim();
-    if (!fullName) return setError('اسم الموظف مطلوب.');
-    if (phone && !/^[+\d][\d\s()-]{6,19}$/.test(phone))
-      return setError('أدخل رقم هاتف صالحًا من 7 إلى 20 حرفًا.');
+    if (!fullName) return setError(t('teamForm.nameRequired'));
+    if (phone && !/^[+\d][\d\s()-]{6,19}$/.test(phone)) return setError(t('teamForm.phoneInvalid'));
     const input: StaffInput = {
       full_name: fullName,
       role: dialog.staff?.role ?? (form.get('role') === 'engineer' ? 'engineer' : 'technician'),
@@ -47,7 +48,7 @@ export function TeamDialogs({
     try {
       if (dialog.staff) await actions.updateStaff.mutateAsync({ id: dialog.staff.id, input });
       else await actions.createStaff.mutateAsync(input);
-      toast.show('تم حفظ بيانات الموظف');
+      toast.show(t('teamForm.staffSaved'));
       onClose();
     } catch (cause) {
       setError(cause);
@@ -61,7 +62,7 @@ export function TeamDialogs({
     const teamId = String(new FormData(event.currentTarget).get('team_id') ?? '');
     try {
       await actions.assignStaff.mutateAsync({ staffId: dialog.staff.id, teamId: teamId || null });
-      toast.show('تم تحديث الفريق');
+      toast.show(t('teamForm.teamUpdated'));
       onClose();
     } catch (cause) {
       setError(cause);
@@ -77,10 +78,10 @@ export function TeamDialogs({
     const engineerId = String(form.get('engineer_id') ?? '');
     const leaderId = String(form.get('leader_id') ?? '');
     if (!name || !engineerId || !leaderId || engineerId === leaderId)
-      return setError('أدخل اسم الفريق واختر المهندس والقائد.');
+      return setError(t('teamForm.teamRequired'));
     try {
       await actions.updateTeam.mutateAsync({ id: dialog.team.id, name, engineerId, leaderId });
-      toast.show('تم تحديث بيانات الفريق');
+      toast.show(t('teamForm.teamSaved'));
       onClose();
     } catch (cause) {
       setError(cause);
@@ -92,7 +93,7 @@ export function TeamDialogs({
     setError(null);
     try {
       await actions.deleteStaff.mutateAsync(dialog.staff.id);
-      toast.show('تم حذف الموظف');
+      toast.show(t('teamForm.deleted'));
       onClose();
     } catch (cause) {
       setError(cause);
@@ -101,11 +102,11 @@ export function TeamDialogs({
 
   if (dialog.kind === 'staff') {
     return (
-      <Modal title={dialog.staff ? 'تعديل بيانات الموظف' : 'إضافة موظف'} onClose={onClose}>
+      <Modal title={t(dialog.staff ? 'teamForm.editStaff' : 'teamForm.addStaff')} onClose={onClose}>
         <form onSubmit={saveStaff}>
           <ErrorMessage error={error} />
           <label>
-            الاسم الكامل
+            {t('teamForm.fullName')}
             <input
               name="full_name"
               required
@@ -116,34 +117,34 @@ export function TeamDialogs({
           </label>
           {!dialog.staff && (
             <label>
-              الوظيفة
+              {t('teamForm.job')}
               <select name="role">
-                <option value="technician">فني صيانة</option>
-                <option value="engineer">مهندس صيانة</option>
+                <option value="technician">{t('roles.technician')}</option>
+                <option value="engineer">{t('roles.engineer')}</option>
               </select>
             </label>
           )}
           <label>
-            رقم الهاتف
+            {t('teamForm.phone')}
             <input
               name="phone"
               type="tel"
               dir="ltr"
               maxLength={20}
               defaultValue={dialog.staff ? phoneFor(directory, dialog.staff.id) : ''}
-              placeholder="اختياري"
+              placeholder={t('common.optional')}
               disabled={directory.contactsRestricted}
             />
           </label>
           {directory.contactsRestricted && (
-            <p className="teams-hint">بيانات الهاتف غير متاحة لهذا الحساب.</p>
+            <p className="teams-hint">{t('teamForm.phoneUnavailable')}</p>
           )}
           <div className="form-actions">
             <button type="button" className="outline-button" onClick={onClose}>
-              إلغاء
+              {t('common.cancel')}
             </button>
             <button className="primary-button" disabled={pending}>
-              حفظ
+              {t('common.save')}
             </button>
           </div>
         </form>
@@ -156,16 +157,16 @@ export function TeamDialogs({
       directory.members.find((member) => member.staff_id === dialog.staff.id)?.team_id ?? '';
     return (
       <Modal
-        title={`توزيع ${dialog.staff.full_name}`}
-        subtitle="اختر الفريق أو اترك الموظف دون فريق."
+        title={t('teamForm.assignTitle', { name: dialog.staff.full_name })}
+        subtitle={t('teamForm.assignHint')}
         onClose={onClose}
       >
         <form onSubmit={saveAssignment}>
           <ErrorMessage error={error} />
           <label>
-            الفريق
+            {t('teamForm.team')}
             <select name="team_id" defaultValue={current}>
-              <option value="">دون فريق</option>
+              <option value="">{t('teamForm.withoutTeam')}</option>
               {directory.teams.map((team) => (
                 <option key={team.id} value={team.id}>
                   {team.name}
@@ -175,10 +176,10 @@ export function TeamDialogs({
           </label>
           <div className="form-actions">
             <button type="button" className="outline-button" onClick={onClose}>
-              إلغاء
+              {t('common.cancel')}
             </button>
             <button className="primary-button" disabled={pending}>
-              تأكيد
+              {t('common.confirm')}
             </button>
           </div>
         </form>
@@ -206,18 +207,18 @@ export function TeamDialogs({
     );
     return (
       <Modal
-        title={`إدارة فريق ${dialog.team.name}`}
-        subtitle="يمكن اختيار قائد من أعضاء الفريق أو من الموظفين غير الموزعين."
+        title={t('teamForm.teamTitle', { name: dialog.team.name })}
+        subtitle={t('teamForm.teamHint')}
         onClose={onClose}
       >
         <form onSubmit={saveTeam}>
           <ErrorMessage error={error} />
           <label>
-            اسم الفريق
+            {t('teamForm.teamName')}
             <input name="name" required maxLength={80} defaultValue={dialog.team.name} />
           </label>
           <label>
-            مهندس الصيانة
+            {t('teamForm.engineer')}
             <select name="engineer_id" defaultValue={dialog.team.engineer_id}>
               {engineers.map((staff) => (
                 <option key={staff.id} value={staff.id}>
@@ -227,7 +228,7 @@ export function TeamDialogs({
             </select>
           </label>
           <label>
-            قائد الفريق
+            {t('teamForm.leader')}
             <select name="leader_id" defaultValue={dialog.team.leader_id}>
               {leaders.map((staff) => (
                 <option key={staff.id} value={staff.id}>
@@ -238,10 +239,10 @@ export function TeamDialogs({
           </label>
           <div className="form-actions">
             <button type="button" className="outline-button" onClick={onClose}>
-              إلغاء
+              {t('common.cancel')}
             </button>
             <button className="primary-button" disabled={pending}>
-              حفظ التغييرات
+              {t('common.saveChanges')}
             </button>
           </div>
         </form>
@@ -250,19 +251,16 @@ export function TeamDialogs({
   }
 
   return (
-    <Modal title="تأكيد حذف الموظف" onClose={onClose}>
+    <Modal title={t('teamForm.confirmDelete')} onClose={onClose}>
       <div className="teams-confirm">
         <ErrorMessage error={error} />
-        <p>
-          سيتم حذف <strong>{dialog.staff.full_name}</strong> وبيانات الاتصال والعضوية الخاصة به. هل
-          تريد المتابعة؟
-        </p>
+        <p>{t('teamForm.deleteHint', { name: dialog.staff.full_name })}</p>
         <div className="form-actions">
           <button type="button" className="outline-button" onClick={onClose}>
-            إلغاء
+            {t('common.cancel')}
           </button>
           <button type="button" className="teams-danger" onClick={removeStaff} disabled={pending}>
-            حذف الموظف
+            {t('teams.deleteEmployee')}
           </button>
         </div>
       </div>

@@ -1,10 +1,12 @@
 import { useState, type FormEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from './AuthProvider';
 import { Modal } from '../../shared/ui/Modal';
 import { ErrorMessage } from '../../shared/ui/ErrorMessage';
 import { useToast } from '../../shared/ui/ToastProvider';
 
 export function LoginModal({ onClose }: { onClose(): void }) {
+  const { t } = useTranslation();
   const { signIn } = useAuth();
   const toast = useToast();
   const [error, setError] = useState<unknown>(null);
@@ -17,7 +19,7 @@ export function LoginModal({ onClose }: { onClose(): void }) {
     const data = new FormData(event.currentTarget);
     try {
       await signIn(String(data.get('email')), String(data.get('password')));
-      toast.show('تم الدخول بنجاح');
+      toast.show(t('auth.success'));
       onClose();
     } catch (cause) {
       setError(cause);
@@ -27,27 +29,23 @@ export function LoginModal({ onClose }: { onClose(): void }) {
   }
 
   return (
-    <Modal
-      title="دخول مسؤول الصيانة"
-      subtitle="استخدم حساب القسم المسجل في Supabase."
-      onClose={onClose}
-    >
+    <Modal title={t('auth.title')} subtitle={t('auth.hint')} onClose={onClose}>
       <form onSubmit={submit}>
         <ErrorMessage error={error} />
         <label>
-          البريد الإلكتروني
+          {t('auth.email')}
           <input name="email" type="email" required autoComplete="email" />
         </label>
         <label>
-          كلمة المرور
+          {t('auth.password')}
           <input name="password" type="password" required autoComplete="current-password" />
         </label>
         <div className="form-actions">
           <button type="button" className="outline-button" onClick={onClose}>
-            إلغاء
+            {t('common.cancel')}
           </button>
           <button className="primary-button" disabled={pending}>
-            {pending ? 'جارٍ الدخول...' : 'دخول'}
+            {pending ? t('auth.loggingIn') : t('auth.login')}
           </button>
         </div>
       </form>

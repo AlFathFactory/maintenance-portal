@@ -1,9 +1,46 @@
 import type { MaintenanceRepository } from './repository';
 import { supabase } from './supabaseClient';
 import type { Membership, Staff, StaffContact, Team } from '../features/teams/types';
+import type {
+  Equipment,
+  EquipmentInput,
+  EquipmentLocale,
+  EquipmentTextField,
+} from '../domain/equipment';
+import { equipmentTextFields } from '../domain/equipment';
+
+type EquipmentRow = Omit<Equipment, 'translations'> & {
+  equipment_translations?: TranslationRow[];
+};
+type TranslationRow = { equipment_id: string; locale: EquipmentLocale } & Partial<
+  Record<EquipmentTextField, string | null>
+>;
+
+function withTranslations(row: EquipmentRow): Equipment {
+  const { equipment_translations = [], ...equipment } = row;
+  return {
+    ...equipment,
+    translations: Object.fromEntries(
+      equipment_translations.map(({ locale, ...translation }) => [
+        locale,
+        Object.fromEntries(equipmentTextFields.map((field) => [field, translation[field] ?? ''])),
+      ]),
+    ),
+  };
+}
+
+function translationRows(id: string, input: EquipmentInput): TranslationRow[] {
+  return (['ar', 'en'] as const).map((locale) => ({
+    equipment_id: id,
+    locale,
+    ...Object.fromEntries(
+      equipmentTextFields.map((field) => [field, input[locale][field] || null]),
+    ),
+  })) as TranslationRow[];
+}
 
 function client() {
-  if (!supabase) throw new Error('لم يُضبط اتصال Supabase.');
+  if (!supabase) throw new Error('SUPABASE_UNAVAILABLE');
   return supabase;
 }
 
@@ -11,40 +48,64 @@ export const supabaseRepository: MaintenanceRepository = {
   async listEquipment() {
     const { data, error } = await client()
       .from('equipment')
-      .select('*')
+      .select('*, equipment_translations(*)')
       .order('type')
       .order('slug');
     if (error) throw error;
-    return data;
+    return (data as EquipmentRow[]).map(withTranslations);
   },
   async getEquipment(slug) {
     const { data, error } = await client()
       .from('equipment')
-      .select('*')
+      .select('*, equipment_translations(*)')
       .eq('slug', slug)
       .maybeSingle();
     if (error) throw error;
-    return data;
+    return data ? withTranslations(data as EquipmentRow) : null;
   },
   async createEquipment(input) {
     const slug = `equipment-${crypto.randomUUID().slice(0, 10)}`;
     const { data, error } = await client()
       .from('equipment')
-      .insert({ ...input, slug })
+      .insert({ ...input.ar, type: input.type, code: input.code, slug })
       .select()
       .single();
     if (error) throw error;
-    return data;
+    const translations = await client()
+      .from('equipment_translations')
+      .upsert(translationRows(data.id, input), { onConflict: 'equipment_id,locale' });
+    if (translations.error) {
+      const cleanup = await client().from('equipment').delete().eq('id', data.id);
+      if (cleanup.error) throw new Error('EQUIPMENT_TRANSLATIONS_PARTIAL');
+      throw translations.error;
+    }
+    return { ...data, translations: { ar: input.ar, en: input.en } } as Equipment;
   },
   async updateEquipment(id, input) {
+    const previous = await client().from('equipment').select('*').eq('id', id).single();
+    if (previous.error) throw previous.error;
     const { data, error } = await client()
       .from('equipment')
-      .update(input)
+      .update({ ...input.ar, type: input.type, code: input.code })
       .eq('id', id)
       .select()
       .single();
     if (error) throw error;
-    return data;
+    const translations = await client()
+      .from('equipment_translations')
+      .upsert(translationRows(id, input), { onConflict: 'equipment_id,locale' });
+    if (translations.error) {
+      const legacy = Object.fromEntries(
+        equipmentTextFields.map((field) => [field, previous.data[field]]),
+      );
+      const restored = await client()
+        .from('equipment')
+        .update({ ...legacy, type: previous.data.type, code: previous.data.code })
+        .eq('id', id);
+      if (restored.error) throw new Error('EQUIPMENT_TRANSLATIONS_PARTIAL');
+      throw translations.error;
+    }
+    return { ...data, translations: { ar: input.ar, en: input.en } } as Equipment;
   },
   async updateStatus(id, status) {
     const { data, error } = await client()
@@ -155,7 +216,7 @@ export const supabaseRepository: MaintenanceRepository = {
     const removedStaff = await db.from('maintenance_staff').delete().eq('id', id).select('id');
     if (removedStaff.error || !removedStaff.data?.length) {
       if (membership.data) await db.from('maintenance_team_members').insert(membership.data);
-      throw removedStaff.error ?? new Error('تعذر حذف الموظف.');
+      throw removedStaff.error ?? new Error('STAFF_DELETE_FAILED');
     }
   },
   async assignStaff(staffId, teamId) {

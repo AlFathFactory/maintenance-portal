@@ -1,13 +1,15 @@
 import type { MaintenanceRecord } from '../../domain/maintenance';
 import { formatDate } from '../../shared/date';
+import { useTranslation } from 'react-i18next';
 
 export function MaintenanceHistory({ records }: { records: MaintenanceRecord[] }) {
+  const { t } = useTranslation();
   if (!records.length)
     return (
       <div className="history-empty">
         <span>⚙</span>
-        <strong>لا توجد عمليات صيانة مسجلة</strong>
-        <p>أضف أول عملية صيانة لتظهر هنا.</p>
+        <strong>{t('maintenance.empty')}</strong>
+        <p>{t('maintenance.emptyHint')}</p>
       </div>
     );
   return (
@@ -17,7 +19,9 @@ export function MaintenanceHistory({ records }: { records: MaintenanceRecord[] }
           <span className="timeline-dot" />
           <div>
             <div className="timeline-top">
-              <strong>{record.kind === 'periodic' ? 'صيانة دورية' : 'إصلاح عطل'}</strong>
+              <strong>
+                {t(record.kind === 'periodic' ? 'maintenance.periodic' : 'maintenance.repair')}
+              </strong>
               <time>{formatDate(record.performed_on)}</time>
             </div>
             <p>{record.notes}</p>

@@ -3,6 +3,30 @@
   display: grid;
   grid-template-columns: 252px minmax(0, 1fr);
 }
+.language-switch {
+  display: inline-flex;
+  direction: ltr;
+  border: 1px solid #cbdcda;
+  border-radius: 10px;
+  padding: 2px;
+  background: #fff;
+}
+.language-switch button {
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #4a666b;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  min-width: 34px;
+  min-height: 32px;
+  cursor: pointer;
+}
+.language-switch button.active {
+  background: #0f766e;
+  color: #fff;
+}
 .sidebar {
   background: #0c2d35;
   color: #fff;

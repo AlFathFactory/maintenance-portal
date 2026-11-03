@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { env } from '../config/env';
 import { useAuth } from '../features/auth/AuthProvider';
@@ -6,6 +7,7 @@ import { LoginModal } from '../features/auth/LoginModal';
 import { useToast } from '../shared/ui/ToastProvider';
 
 export function AppShell() {
+  const { t, i18n } = useTranslation();
   const [loginOpen, setLoginOpen] = useState(false);
   const { user, isAdmin, loading, error, signOut } = useAuth();
   const toast = useToast();
@@ -15,9 +17,9 @@ export function AppShell() {
   async function logout() {
     try {
       await signOut();
-      toast.show('تم تسجيل الخروج');
+      toast.show(t('shell.loggedOut'));
     } catch (cause) {
-      toast.show(cause instanceof Error ? cause.message : 'تعذر تسجيل الخروج');
+      toast.show(cause instanceof Error ? cause.message : t('shell.logoutFailed'));
     }
   }
 
@@ -27,30 +29,30 @@ export function AppShell() {
         <Link to="/" className="brand">
           <div className="brand-mark">M</div>
           <div>
-            <strong>مصنع الفتح</strong>
-            <small>قسم الصيانة</small>
+            <strong>{t('shell.factory')}</strong>
+            <small>{t('shell.department')}</small>
           </div>
         </Link>
-        <div className="side-label">القائمة الرئيسية</div>
-        <nav aria-label="القائمة الرئيسية">
+        <div className="side-label">{t('shell.menu')}</div>
+        <nav aria-label={t('shell.menu')}>
           <NavLink to="/" end className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-            ▦ <span>لوحة المعدات</span>
+            ▦ <span>{t('shell.dashboard')}</span>
           </NavLink>
           <Link className="nav-item" to="/?type=machine">
-            ▤ <span>الماكينات</span>
+            ▤ <span>{t('shell.machines')}</span>
           </Link>
           <Link className="nav-item" to="/?type=crane">
-            ♜ <span>الأوناش</span>
+            ♜ <span>{t('shell.cranes')}</span>
           </Link>
           <NavLink to="/teams" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-            ♧ <span>فريق الصيانة</span>
+            ♧ <span>{t('shell.teams')}</span>
           </NavLink>
         </nav>
         <div className="sidebar-bottom">
           <div className="sidebar-note">
             <span className="note-icon">▣</span>
-            <strong>ملف لكل معدة</strong>
-            <p>امسح رمز QR للوصول إلى بيانات المعدة مباشرة.</p>
+            <strong>{t('shell.equipmentProfile')}</strong>
+            <p>{t('shell.qrNote')}</p>
           </div>
           <div className="side-foot">
             MAINTENANCE SYSTEM <span>2026</span>
@@ -61,51 +63,68 @@ export function AppShell() {
         <header className="topbar">
           <div className="mobile-brand">
             <div className="brand-mark">F</div>
-            <strong>قسم الصيانة</strong>
+            <strong>{t('shell.department')}</strong>
           </div>
           <div className="breadcrumb">
-            قسم الصيانة <span>/</span>{' '}
-            {detail ? 'تفاصيل المعدة' : teamsPage ? 'فريق الصيانة' : 'لوحة المعدات'}
+            {t('shell.department')} <span>/</span>{' '}
+            {detail
+              ? t('shell.equipmentDetails')
+              : teamsPage
+                ? t('shell.teams')
+                : t('shell.dashboard')}
           </div>
           <div className="top-actions">
-            {env.isDemo && <span className="demo-pill">نسخة تجريبية محلية</span>}
+            <div className="language-switch" role="group" aria-label={t('shell.language')}>
+              {(['ar', 'en'] as const).map((language) => (
+                <button
+                  key={language}
+                  type="button"
+                  className={i18n.language === language ? 'active' : ''}
+                  aria-pressed={i18n.language === language}
+                  onClick={() => void i18n.changeLanguage(language)}
+                >
+                  {language.toUpperCase()}
+                </button>
+              ))}
+            </div>
+            {env.isDemo && <span className="demo-pill">{t('shell.localDemo')}</span>}
             {loading ? (
-              <span className="account-chip">جارٍ التحقق...</span>
+              <span className="account-chip">{t('shell.checking')}</span>
             ) : isAdmin ? (
               <>
-                <span className="account-chip">{user?.email || 'وضع المسؤول التجريبي'}</span>
+                <span className="account-chip">{user?.email || t('shell.demoAdmin')}</span>
                 {!env.isDemo && (
                   <button className="text-button" onClick={logout}>
-                    خروج
+                    {t('shell.logout')}
                   </button>
                 )}
               </>
             ) : user ? (
               <>
-                <span className="account-chip">حساب غير مخوّل</span>
+                <span className="account-chip">{t('shell.unauthorized')}</span>
                 <button className="text-button" onClick={logout}>
-                  خروج
+                  {t('shell.logout')}
                 </button>
               </>
             ) : (
               <button className="login-button" onClick={() => setLoginOpen(true)}>
-                دخول مسؤول الصيانة
+                {t('shell.login')}
               </button>
             )}
           </div>
         </header>
-        <nav className="mobile-nav" aria-label="التنقل على الهاتف">
+        <nav className="mobile-nav" aria-label={t('shell.menu')}>
           <NavLink to="/" end className={({ isActive }) => (isActive ? 'active' : '')}>
-            المعدات
+            {t('shell.mobileEquipment')}
           </NavLink>
           <NavLink to="/teams" className={({ isActive }) => (isActive ? 'active' : '')}>
-            فريق الصيانة
+            {t('shell.teams')}
           </NavLink>
         </nav>
         <main>
           {error && (
             <div className="error-banner" role="alert">
-              تعذر التحقق من صلاحية الحساب: {error}
+              {t('shell.authCheckFailed')}: {error}
             </div>
           )}
           <Outlet />

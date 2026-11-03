@@ -13,6 +13,7 @@ function dialableNumber(phone: string | null | undefined): string | null {
 }
 
 export function CallButton({ name, phone }: Props) {
+  const { t } = useTranslation();
   const number = dialableNumber(phone);
   if (!number) return null;
 
@@ -20,8 +21,8 @@ export function CallButton({ name, phone }: Props) {
     <a
       className="teams-call"
       href={`tel:${number}`}
-      aria-label={`اتصال بـ ${name} على الرقم ${phone?.trim()}`}
-      title={`اتصال بـ ${name}: ${phone?.trim()}`}
+      aria-label={t('teams.callLabel', { name, phone: phone?.trim() })}
+      title={t('teams.callTitle', { name, phone: phone?.trim() })}
       onClick={(event) => event.stopPropagation()}
     >
       <svg
@@ -38,3 +39,4 @@ export function CallButton({ name, phone }: Props) {
     </a>
   );
 }
+import { useTranslation } from 'react-i18next';

@@ -1,4 +1,5 @@
 import { lazy, Suspense } from 'react';
+import { useTranslation } from 'react-i18next';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { HashRouter, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from '../features/auth/AuthProvider';
@@ -23,12 +24,13 @@ const queryClient = new QueryClient({
 });
 
 export function App() {
+  const { t } = useTranslation();
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <ToastProvider>
           <HashRouter>
-            <Suspense fallback={<div className="loading">جارٍ تحميل الصفحة...</div>}>
+            <Suspense fallback={<div className="loading">{t('app.loading')}</div>}>
               <Routes>
                 <Route element={<AppShell />}>
                   <Route index element={<DashboardPage />} />
@@ -38,7 +40,7 @@ export function App() {
                     path="*"
                     element={
                       <div className="not-found">
-                        <h1>الصفحة غير موجودة</h1>
+                        <h1>{t('app.notFound')}</h1>
                       </div>
                     }
                   />

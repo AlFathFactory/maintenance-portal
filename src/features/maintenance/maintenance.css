@@ -40,7 +40,7 @@
   position: absolute;
   top: 14px;
   bottom: 0;
-  right: 5px;
+  inset-inline-start: 5px;
   width: 1px;
   background: #dceae7;
 }

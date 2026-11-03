@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Equipment } from '../../domain/equipment';
 import type { MaintenanceInput } from '../../domain/maintenance';
 import { Modal } from '../../shared/ui/Modal';
@@ -6,8 +7,10 @@ import { ErrorMessage } from '../../shared/ui/ErrorMessage';
 import { useToast } from '../../shared/ui/ToastProvider';
 import { todayLocal } from '../../shared/date';
 import { useCreateMaintenance } from './queries';
+import { equipmentText } from '../../domain/localizedEquipment';
 
 export function MaintenanceForm({ equipment, onClose }: { equipment: Equipment; onClose(): void }) {
+  const { t, i18n } = useTranslation();
   const [error, setError] = useState<unknown>(null);
   const create = useCreateMaintenance();
   const toast = useToast();
@@ -23,58 +26,62 @@ export function MaintenanceForm({ equipment, onClose }: { equipment: Equipment; 
       status_after: (data.get('status_after') || null) as MaintenanceInput['status_after'],
     };
     if (!input.notes) {
-      setError(new Error('اكتب ملاحظات الصيانة.'));
+      setError(new Error(t('maintenance.notesRequired')));
       return;
     }
     try {
       await create.mutateAsync(input);
-      toast.show('تم تسجيل عملية الصيانة');
+      toast.show(t('maintenance.saved'));
       onClose();
     } catch (cause) {
       setError(cause);
     }
   }
   return (
-    <Modal title="تسجيل عملية صيانة" subtitle={equipment.name} onClose={onClose}>
+    <Modal
+      title={t('maintenance.formTitle')}
+      subtitle={equipmentText(equipment, 'name', i18n.language === 'en' ? 'en' : 'ar')}
+      onClose={onClose}
+    >
       <form onSubmit={submit}>
         <ErrorMessage error={error} />
         <div className="form-grid">
           <label>
-            نوع العملية
+            {t('maintenance.kind')}
             <select name="kind">
-              <option value="repair">إصلاح عطل</option>
-              <option value="periodic">صيانة دورية</option>
+              <option value="repair">{t('maintenance.repair')}</option>
+              <option value="periodic">{t('maintenance.periodic')}</option>
             </select>
           </label>
           <label>
-            تاريخ الصيانة
+            {t('maintenance.date')}
             <input type="date" name="performed_on" defaultValue={todayLocal()} required />
           </label>
         </div>
         <label>
-          ملاحظات الصيانة
+          {t('maintenance.notes')}
           <textarea
             name="notes"
             rows={5}
-            placeholder="اكتب الأعمال التي تمت والنتيجة..."
+            placeholder={t('maintenance.notesPlaceholder')}
             required
           />
         </label>
         <label>
-          الحالة بعد الصيانة
+          {t('maintenance.afterStatus')}
           <select name="status_after">
-            <option value="">لا تغيّر الحالة</option>
-            <option value="operational">تعمل</option>
-            <option value="out_of_service">خارج الخدمة</option>
-            <option value="maintenance">تحت الصيانة</option>
+            <option value="">{t('maintenance.keepStatus')}</option>
+            <option value="operational">{t('status.operational')}</option>
+            <option value="out_of_service">{t('status.out_of_service')}</option>
+            <option value="maintenance">{t('status.maintenance')}</option>
           </select>
         </label>
         <div className="form-actions">
           <button type="button" className="outline-button" onClick={onClose}>
-            إلغاء
+            {t('common.cancel')}
           </button>
           <button className="primary-button" disabled={create.isPending}>
-            {create.isPending ? 'جارٍ الحفظ...' : 'حفظ الصيانة'}
+            {create.isPending ? t('common.saving') : t('maintenance.save')}
           </button>
         </div>
       </form>

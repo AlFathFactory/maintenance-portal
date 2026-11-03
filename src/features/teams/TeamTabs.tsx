@@ -1,4 +1,5 @@
 import type { KeyboardEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export interface TeamTab {
   id: string;
@@ -15,6 +16,7 @@ export function TeamTabs({
   selectedId: string;
   onSelect(id: string): void;
 }) {
+  const { t } = useTranslation();
   function handleKeyDown(event: KeyboardEvent<HTMLButtonElement>, index: number) {
     if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
     event.preventDefault();
@@ -26,7 +28,7 @@ export function TeamTabs({
   }
 
   return (
-    <div className="teams-tabs" role="tablist" aria-label="فرق الصيانة">
+    <div className="teams-tabs" role="tablist" aria-label={t('teams.tabsLabel')}>
       {teams.map((team, index) => (
         <button
           key={team.id}

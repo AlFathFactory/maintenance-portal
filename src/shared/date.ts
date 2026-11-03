@@ -1,6 +1,8 @@
+import i18n from '../i18n';
+
 export function formatDate(value: string | null | undefined): string {
-  if (!value) return 'لم تُسجل صيانة بعد';
-  return new Intl.DateTimeFormat('ar-EG', {
+  if (!value) return i18n.t('common.noMaintenanceDate');
+  return new Intl.DateTimeFormat(i18n.language === 'en' ? 'en-GB' : 'ar-EG', {
     day: 'numeric',
     month: 'long',
     year: 'numeric',

@@ -6,9 +6,9 @@
 
 ## 1. What this system does
 
-Arabic RTL factory maintenance portal. Visitors browse equipment, status, equipment-specific QR codes and public equipment details. Authenticated **maintenance admins** can add/update equipment, change statuses and record repairs/periodic maintenance. The codebase contains both a live Supabase repository and a browser-local demo implementation.
+Arabic/English factory maintenance portal. Arabic is the default RTL language; English uses LTR. Visitors browse equipment, status, equipment-specific QR codes and public equipment details. Authenticated **maintenance admins** can add/update equipment, change statuses and record repairs/periodic maintenance. The codebase contains both a live Supabase repository and a browser-local demo implementation.
 
-**Stack:** React 19, TypeScript, Vite, React Router 7 (`HashRouter`), TanStack React Query 5, `@supabase/supabase-js` 2, `qrcode`, plain CSS.
+**Stack:** React 19, TypeScript, Vite, React Router 7 (`HashRouter`), TanStack React Query 5, `@supabase/supabase-js` 2, `i18next`, `react-i18next`, `qrcode`, plain CSS.
 
 ## 2. Complete tracked file structure
 
@@ -39,6 +39,10 @@ maintenance-portal/
     │   ├── utilities.css       # Loading, empty, and not-found states
     │   └── print.css           # Print-only layout and QR output
     ├── equipment.json           # Initial local demo equipment dataset
+    ├── i18n/
+    │   ├── index.ts             # i18next setup, language persistence and document direction
+    │   ├── ar.ts                # Arabic UI messages
+    │   └── en.ts                # English UI messages
     ├── app/
     │   ├── App.tsx              # Providers, HashRouter, routes, lazy-loaded pages
     │   ├── AppShell.tsx         # Navigation/sidebar, login/logout UI, Outlet
@@ -46,7 +50,8 @@ maintenance-portal/
     ├── config/
     │   └── env.ts               # Vite env parsing; determines demo vs Supabase
     ├── domain/
-    │   ├── equipment.ts         # Equipment types, statuses, labels, input types
+    │   ├── equipment.ts         # Equipment types, statuses and bilingual input types
+    │   ├── localizedEquipment.ts # Per-field equipment fallback and form values
     │   └── maintenance.ts       # Maintenance types, input and record interfaces
     ├── features/
     │   ├── auth/
@@ -129,6 +134,8 @@ Supabase INSERT into maintenance_records
 - **Equipment list:** `DashboardPage → useEquipmentList → repository.listEquipment → equipment`; dashboard filters search/type client-side.
 - **Equipment detail / QR:** route `/equipment/:slug → useEquipment(slug) → repository.getEquipment(slug)`; `QrCard` generates a URL such as `origin/path#/equipment/<encoded-slug>`.
 - **Add/edit equipment:** `EquipmentForm → useEquipmentActions().create/update → repository.createEquipment/updateEquipment → equipment`; successful mutation invalidates all `['equipment']` queries.
+- **Localization:** `src/i18n` initializes Arabic by default, persists AR/EN in `localStorage`, and updates `<html lang>`/`dir`. `AppShell` provides the language switcher. React components use `useTranslation`; `formatDate` follows the current language.
+- **Equipment translations:** equipment list/detail reads join `equipment_translations`. `equipmentText()` resolves each field independently: selected English value, then Arabic translation, then the legacy Arabic equipment field. The paired form requires an Arabic name and accepts optional English text. Create/edit syncs the legacy Arabic fields and upserts both locales on `(equipment_id,locale)`; the demo repository follows the same model.
 - **Change status:** `StatusForm → useEquipmentActions().setStatus → repository.updateStatus → equipment`; equipment cache invalidated.
 - **Read maintenance:** `EquipmentPage → useMaintenance(equipmentId, enabled) → repository.listMaintenance → maintenance_records`, ordered by `performed_on` descending.
 - **Create maintenance:** `MaintenanceForm → useCreateMaintenance → repository.createMaintenance → maintenance_records`; successful mutation invalidates `['maintenance', equipmentId]` and `['equipment']`; the database trigger updates the equipment summary.
@@ -153,7 +160,7 @@ Supabase INSERT into maintenance_records
 | `StatusBadge` / `EquipmentIcon` | `src/shared/ui/` | Consistent visual status/type rendering. |
 | `QrCard` | `src/shared/ui/QrCard.tsx` | Equipment QR, download and print. |
 | `formatDate`, `todayLocal` | `src/shared/date.ts` | Arabic date formatting and local date defaults. |
-| `statusDetails`, `typeLabels` | `src/domain/equipment.ts` | Single source for labels, statuses, equipment kinds. |
+| `statusDetails`, `equipmentText` | `src/domain/` | Status tones and per-field localized equipment values; labels live in the language resources. |
 | `MaintenanceHistory` | `src/features/maintenance/MaintenanceHistory.tsx` | Read-only timeline for both admins and public visitors. |
 | `src/styles/`, feature CSS, `src/shared/styles/` | Ordered imports in `src/main.tsx` | Keep page rules with their feature and shared controls in shared styles. |
 
@@ -168,6 +175,7 @@ Supabase INSERT into maintenance_records
 | Table | Important fields | Purpose |
 | --- | --- | --- |
 | `public.equipment` | `id` UUID, unique `slug`, `type`, `name`, specs, `status`, `last_maintenance_on` | Public inventory and equipment profile. |
+| `public.equipment_translations` | `(equipment_id, locale)` key, translated name and specs | Public AR/EN text; admin-only writes. Arabic equipment names are required. |
 | `public.maintenance_records` | `id`, `equipment_id` FK, `kind`, `performed_on`, `notes`, `status_after`, `created_by`, `created_at` | Maintenance history, repairs, periodic services. |
 | `public.maintenance_admins` | `user_id` FK to `auth.users` | Authorized maintenance admins. |
 | `public.maintenance_staff` | `id`, `full_name`, `role` | People in the department. |

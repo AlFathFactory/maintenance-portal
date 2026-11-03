@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { CallButton } from './CallButton';
 import type { TeamDialog } from './TeamDialogs';
 import type { Staff, TeamDirectory } from './types';
@@ -18,6 +19,7 @@ export function StaffRow({
   mobile?: boolean;
   onAction(dialog: TeamDialog): void;
 }) {
+  const { t } = useTranslation();
   const [menuOpen, setMenuOpen] = useState(false);
   const phone = directory.contacts.find((contact) => contact.staff_id === staff.id)?.phone;
   const protectedStaff = directory.teams.some(
@@ -33,7 +35,7 @@ export function StaffRow({
   return (
     <article className={`teams-person${mobile ? ' teams-person-mobile' : ''}`}>
       <div className="teams-person-info">
-        <strong>{staff.full_name}</strong>
+        <strong dir="auto">{staff.full_name}</strong>
         {role && <span className="teams-role">{role}</span>}
       </div>
       {mobile ? (
@@ -43,7 +45,7 @@ export function StaffRow({
               <button
                 type="button"
                 className="teams-menu-trigger"
-                aria-label={`إجراءات ${staff.full_name}`}
+                aria-label={t('teams.actions', { name: staff.full_name })}
                 aria-expanded={menuOpen}
                 onClick={() => setMenuOpen((open) => !open)}
               >
@@ -61,8 +63,8 @@ export function StaffRow({
               type="button"
               className="teams-icon-button"
               onClick={() => onAction({ kind: 'staff', staff })}
-              aria-label={`تعديل ${staff.full_name}`}
-              title="تعديل"
+              aria-label={t('teams.editPerson', { name: staff.full_name })}
+              title={t('teams.edit')}
             >
               ✎
             </button>
@@ -72,8 +74,8 @@ export function StaffRow({
               type="button"
               className="teams-icon-button"
               onClick={() => onAction({ kind: 'assign', staff })}
-              aria-label={`توزيع ${staff.full_name}`}
-              title="توزيع الفريق"
+              aria-label={t('teams.assignPerson', { name: staff.full_name })}
+              title={t('teams.assign')}
             >
               ↔
             </button>
@@ -83,8 +85,8 @@ export function StaffRow({
               type="button"
               className="teams-icon-button teams-icon-danger"
               onClick={() => onAction({ kind: 'delete', staff })}
-              aria-label={`حذف ${staff.full_name}`}
-              title="حذف"
+              aria-label={t('teams.deletePerson', { name: staff.full_name })}
+              title={t('teams.delete')}
             >
               ×
             </button>
@@ -94,11 +96,11 @@ export function StaffRow({
       {mobile && menuOpen && admin && (
         <div className="teams-mobile-actions">
           <button type="button" onClick={() => openDialog({ kind: 'staff', staff })}>
-            تعديل البيانات
+            {t('teams.editData')}
           </button>
           {canAssign && (
             <button type="button" onClick={() => openDialog({ kind: 'assign', staff })}>
-              نقل بين الفرق
+              {t('teams.transfer')}
             </button>
           )}
           {canDelete && (
@@ -107,7 +109,7 @@ export function StaffRow({
               className="teams-mobile-delete"
               onClick={() => openDialog({ kind: 'delete', staff })}
             >
-              حذف الموظف
+              {t('teams.deleteEmployee')}
             </button>
           )}
         </div>

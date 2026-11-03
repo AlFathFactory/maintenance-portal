@@ -121,7 +121,7 @@
 .tab span {
   font-size: 10px;
   color: #9aa9ab;
-  margin-right: 4px;
+  margin-inline-start: 4px;
 }
 .tab.selected {
   border-color: #17aa92;

@@ -1,21 +1,53 @@
 import { useState, type FormEvent } from 'react';
-import type { Equipment, EquipmentInput, EquipmentType } from '../../domain/equipment';
+import { useTranslation } from 'react-i18next';
+import {
+  equipmentTextFields,
+  type Equipment,
+  type EquipmentInput,
+  type EquipmentTextField,
+  type EquipmentType,
+} from '../../domain/equipment';
+import { equipmentFormText } from '../../domain/localizedEquipment';
 import { Modal } from '../../shared/ui/Modal';
 import { ErrorMessage } from '../../shared/ui/ErrorMessage';
 import { useToast } from '../../shared/ui/ToastProvider';
 import { useEquipmentActions } from './queries';
 
-const fields: { name: keyof EquipmentInput; label: string }[] = [
-  { name: 'name', label: 'اسم المعدة' },
-  { name: 'code', label: 'الكود' },
-  { name: 'model', label: 'الموديل' },
-  { name: 'power', label: 'القدرة' },
-  { name: 'made_in', label: 'بلد الصنع' },
-  { name: 'location', label: 'الموقع' },
-];
+const commonFields: EquipmentTextField[] = ['name', 'model', 'power', 'made_in', 'location'];
+const machineFields: EquipmentTextField[] = ['length_spec', 'p_spec'];
+const craneFields: EquipmentTextField[] = ['max_load', 'height', 'width'];
 
 function inputValue(data: FormData, key: string): string {
   return String(data.get(key) ?? '').trim();
+}
+
+function LocalizedFieldPair({
+  field,
+  equipment,
+}: {
+  field: EquipmentTextField;
+  equipment?: Equipment;
+}) {
+  const { t } = useTranslation();
+  const ar = equipmentFormText(equipment, 'ar');
+  const en = equipmentFormText(equipment, 'en');
+  return (
+    <div className="localized-field-pair">
+      <label lang="ar" dir="rtl">
+        {t(`equipment.${field}`, { lng: 'ar' })} (AR) {field === 'name' && '*'}
+        <input
+          name={`ar_${field}`}
+          defaultValue={ar[field]}
+          required={field === 'name'}
+          dir="auto"
+        />
+      </label>
+      <label lang="en" dir="ltr">
+        {t(`equipment.${field}`, { lng: 'en' })} (EN)
+        <input name={`en_${field}`} defaultValue={en[field]} dir="auto" />
+      </label>
+    </div>
+  );
 }
 
 export function EquipmentForm({
@@ -27,6 +59,7 @@ export function EquipmentForm({
   onClose(): void;
   onSaved(item: Equipment): void;
 }) {
+  const { t } = useTranslation();
   const [type, setType] = useState<EquipmentType>(equipment?.type ?? 'machine');
   const [error, setError] = useState<unknown>(null);
   const { create, update } = useEquipmentActions();
@@ -37,25 +70,26 @@ export function EquipmentForm({
     event.preventDefault();
     setError(null);
     const data = new FormData(event.currentTarget);
+    const active = [...commonFields, ...(type === 'machine' ? machineFields : craneFields)];
+    const text = (locale: 'ar' | 'en') =>
+      Object.fromEntries(
+        equipmentTextFields.map((field) => [
+          field,
+          active.includes(field) ? inputValue(data, `${locale}_${field}`) : '',
+        ]),
+      ) as EquipmentInput['ar'];
     const input: EquipmentInput = {
       type,
-      name: inputValue(data, 'name'),
       code: inputValue(data, 'code'),
-      model: inputValue(data, 'model'),
-      power: inputValue(data, 'power'),
-      made_in: inputValue(data, 'made_in'),
-      location: inputValue(data, 'location'),
-      length_spec: type === 'machine' ? inputValue(data, 'length_spec') : '',
-      p_spec: type === 'machine' ? inputValue(data, 'p_spec') : '',
-      max_load: type === 'crane' ? inputValue(data, 'max_load') : '',
-      height: type === 'crane' ? inputValue(data, 'height') : '',
-      width: type === 'crane' ? inputValue(data, 'width') : '',
+      ar: text('ar'),
+      en: text('en'),
     };
+    if (!input.ar.name) return setError(new Error(t('equipment.arabicRequired')));
     try {
       const saved = equipment
         ? await update.mutateAsync({ id: equipment.id, input })
         : await create.mutateAsync(input);
-      toast.show('تم حفظ بيانات المعدة');
+      toast.show(t('equipment.saved'));
       onSaved(saved);
     } catch (cause) {
       setError(cause);
@@ -64,66 +98,40 @@ export function EquipmentForm({
 
   return (
     <Modal
-      title={equipment ? 'تعديل بيانات المعدة' : 'إضافة معدة'}
-      subtitle="املأ البيانات المتاحة. يمكنك ترك الحقول غير المعروفة فارغة."
+      title={t(equipment ? 'equipment.editTitle' : 'equipment.addTitle')}
+      subtitle={t('equipment.formHint')}
       onClose={onClose}
     >
       <form onSubmit={submit}>
         <ErrorMessage error={error} />
         <div className="form-grid">
           <label>
-            النوع
+            {t('equipment.type')}
             <select
               name="type"
               value={type}
               onChange={(event) => setType(event.target.value as EquipmentType)}
             >
-              <option value="machine">ماكينة</option>
-              <option value="crane">ونش</option>
+              <option value="machine">{t('equipmentType.machine')}</option>
+              <option value="crane">{t('equipmentType.crane')}</option>
             </select>
           </label>
-          {fields.map((field) => (
-            <label key={field.name}>
-              {field.label}
-              <input
-                name={field.name}
-                defaultValue={equipment?.[field.name] ?? ''}
-                required={field.name === 'name'}
-              />
-            </label>
+          <label>
+            {t('equipment.code')}
+            <input name="code" defaultValue={equipment?.code ?? ''} />
+          </label>
+        </div>
+        <div className="localized-fields">
+          {[...commonFields, ...(type === 'machine' ? machineFields : craneFields)].map((field) => (
+            <LocalizedFieldPair key={field} field={field} equipment={equipment} />
           ))}
-          {type === 'machine' ? (
-            <>
-              <label>
-                L<input name="length_spec" defaultValue={equipment?.length_spec ?? ''} />
-              </label>
-              <label>
-                P<input name="p_spec" defaultValue={equipment?.p_spec ?? ''} />
-              </label>
-            </>
-          ) : (
-            <>
-              <label>
-                الحمولة القصوى
-                <input name="max_load" defaultValue={equipment?.max_load ?? ''} />
-              </label>
-              <label>
-                الارتفاع
-                <input name="height" defaultValue={equipment?.height ?? ''} />
-              </label>
-              <label>
-                العرض
-                <input name="width" defaultValue={equipment?.width ?? ''} />
-              </label>
-            </>
-          )}
         </div>
         <div className="form-actions">
           <button type="button" className="outline-button" onClick={onClose}>
-            إلغاء
+            {t('common.cancel')}
           </button>
           <button className="primary-button" disabled={pending}>
-            {pending ? 'جارٍ الحفظ...' : 'حفظ البيانات'}
+            {pending ? t('common.saving') : t('equipment.saveData')}
           </button>
         </div>
       </form>

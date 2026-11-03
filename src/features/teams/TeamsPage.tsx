@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { env } from '../../config/env';
 import { useAuth } from '../auth/AuthProvider';
 import { ErrorMessage } from '../../shared/ui/ErrorMessage';
@@ -41,37 +42,43 @@ function TeamBranch({
   onAction(dialog: TeamDialog): void;
   index: number;
 }) {
+  const { t } = useTranslation();
   const { team, leader, members } = view;
   return (
-    <section className={`teams-branch teams-branch-${index % 2}`} aria-label={`فريق ${team.name}`}>
+    <section
+      className={`teams-branch teams-branch-${index % 2}`}
+      aria-label={`${t('teams.team')} ${team.name}`}
+    >
       <div className="teams-branch-head">
         {/* <div className="teams-branch-symbol" aria-hidden="true">
           {index % 2 === 0 ? '⚙' : 'ϟ'}
         </div> */}
         <div>
-          <span className="teams-overline">فريق الصيانة</span>
-          <h2>{team.name}</h2>
+          <span className="teams-overline">{t('teams.team')}</span>
+          <h2 dir="auto">{team.name}</h2>
         </div>
-        <span className="teams-count">{members.length} فنيين</span>
+        <span className="teams-count">
+          {t('teams.techniciansCount', { count: members.length })}
+        </span>
         {admin && (
           <button
             className="teams-edit-team"
             type="button"
             onClick={() => onAction({ kind: 'team', team })}
           >
-            إدارة الفريق
+            {t('teams.manageTeam')}
           </button>
         )}
       </div>
       <div className="teams-branch-body">
-        <div className="teams-section-label">مشرف</div>
+        <div className="teams-section-label">{t('teams.supervisor')}</div>
         {leader ? (
           <StaffRow staff={leader} directory={directory} admin={admin} onAction={onAction} />
         ) : (
-          <p className="teams-placeholder">لم يُعيَّن قائد لهذا الفريق.</p>
+          <p className="teams-placeholder">{t('teams.leaderMissing')}</p>
         )}
         <div className="teams-members-heading">
-          <span className="teams-section-label">الفنيون</span>
+          <span className="teams-section-label">{t('teams.technicians')}</span>
           <span>{members.length}</span>
         </div>
         <div className="teams-members">
@@ -80,14 +87,14 @@ function TeamBranch({
               <StaffRow
                 key={staff.id}
                 staff={staff}
-                role="فني صيانة"
+                role={t('teams.technician')}
                 directory={directory}
                 admin={admin}
                 onAction={onAction}
               />
             ))
           ) : (
-            <p className="teams-placeholder">لا يوجد فنيون في هذا الفريق بعد.</p>
+            <p className="teams-placeholder">{t('teams.techniciansMissing')}</p>
           )}
         </div>
       </div>
@@ -96,6 +103,7 @@ function TeamBranch({
 }
 
 export function TeamsPage() {
+  const { t } = useTranslation();
   const { isAdmin, loading: authLoading } = useAuth();
   const directoryQuery = useTeamDirectory();
   const [dialog, setDialog] = useState<TeamDialog | null>(null);
@@ -116,9 +124,9 @@ export function TeamsPage() {
     <div className="teams-page">
       <div className="teams-page-header">
         <div>
-          <span className="teams-eyebrow">الهيكل التنظيمي · قسم الصيانة</span>
-          <h1>فريق الصيانة</h1>
-          <p>الأشخاص الذين يحافظون على جاهزية المصنع، في عرض واضح لكل فريق ومسؤولياته.</p>
+          <span className="teams-eyebrow">{t('teams.eyebrow')}</span>
+          <h1>{t('teams.title')}</h1>
+          <p>{t('teams.intro')}</p>
         </div>
         {canManage && (
           <button
@@ -126,7 +134,7 @@ export function TeamsPage() {
             className="primary-button"
             onClick={() => setDialog({ kind: 'staff' })}
           >
-            <span>＋</span> إضافة موظف
+            <span>＋</span> {t('teams.add')}
           </button>
         )}
       </div>
@@ -137,7 +145,7 @@ export function TeamsPage() {
             <div className="teams-skeleton" />
             <div className="teams-skeleton" />
           </div>
-          <p>جارٍ تحميل الهيكل التنظيمي...</p>
+          <p>{t('teams.loading')}</p>
         </div>
       ) : directoryQuery.isError ? (
         <div className="teams-state">
@@ -147,7 +155,7 @@ export function TeamsPage() {
         <>
           <div className="teams-chart">
             <div className="teams-engineers">
-              <span className="teams-overline">مهندس الصيانة</span>
+              <span className="teams-overline">{t('teams.engineer')}</span>
               {engineers.map((staff) => (
                 <StaffRow
                   key={staff.id}
@@ -157,7 +165,9 @@ export function TeamsPage() {
                   onAction={setDialog}
                 />
               ))}
-              {!engineers.length && <p className="teams-placeholder">لم يُعيَّن مهندس صيانة.</p>}
+              {!engineers.length && (
+                <p className="teams-placeholder">{t('teams.engineerMissing')}</p>
+              )}
             </div>
             <div className="teams-branches">
               {views.map((view, index) => (
@@ -174,19 +184,20 @@ export function TeamsPage() {
           </div>
           <div className="teams-mobile-directory">
             <div className="teams-mobile-hero">
-              <span className="teams-overline">مهندس الصيانة</span>
+              <span className="teams-overline">{t('teams.engineer')}</span>
               {engineers.map((staff) => (
                 <StaffRow
                   key={staff.id}
                   staff={staff}
-                  // role="الإشراف على الفرق"
                   directory={directory}
                   admin={canManage}
                   mobile
                   onAction={setDialog}
                 />
               ))}
-              {!engineers.length && <p className="teams-placeholder">لم يُعيَّن مهندس صيانة.</p>}
+              {!engineers.length && (
+                <p className="teams-placeholder">{t('teams.engineerMissing')}</p>
+              )}
             </div>
             <TeamTabs
               teams={views.map((view) => ({
@@ -206,8 +217,8 @@ export function TeamsPage() {
             >
               <div className="teams-mobile-panel-head">
                 <div>
-                  <span>فريق الصيانة</span>
-                  <h2>{selectedView.team.name}</h2>
+                  <span>{t('teams.team')}</span>
+                  <h2 dir="auto">{selectedView.team.name}</h2>
                 </div>
                 {canManage && (
                   <button
@@ -215,33 +226,33 @@ export function TeamsPage() {
                     className="teams-mobile-team-edit"
                     onClick={() => setDialog({ kind: 'team', team: selectedView.team })}
                   >
-                    إدارة الفريق
+                    {t('teams.manageTeam')}
                   </button>
                 )}
               </div>
               <div className="teams-mobile-list">
-                <p className="teams-mobile-section-label">مشرف الفريق</p>
+                <p className="teams-mobile-section-label">{t('teams.supervisorFull')}</p>
                 {selectedView.leader ? (
                   <StaffRow
                     staff={selectedView.leader}
-                    role="مشرف الفريق"
+                    role={t('teams.supervisorFull')}
                     directory={directory}
                     admin={canManage}
                     mobile
                     onAction={setDialog}
                   />
                 ) : (
-                  <p className="teams-placeholder">لم يُعيَّن مشرف لهذا الفريق.</p>
+                  <p className="teams-placeholder">{t('teams.mobileLeaderMissing')}</p>
                 )}
                 <p className="teams-mobile-section-label">
-                  الفنيون <span>{selectedView.members.length}</span>
+                  {t('teams.technicians')} <span>{selectedView.members.length}</span>
                 </p>
                 {selectedView.members.length ? (
                   selectedView.members.map((staff) => (
                     <StaffRow
                       key={staff.id}
                       staff={staff}
-                      role="فني صيانة"
+                      role={t('teams.technician')}
                       directory={directory}
                       admin={canManage}
                       mobile
@@ -249,7 +260,7 @@ export function TeamsPage() {
                     />
                   ))
                 ) : (
-                  <p className="teams-placeholder">لا يوجد فنيون في هذا الفريق بعد.</p>
+                  <p className="teams-placeholder">{t('teams.techniciansMissing')}</p>
                 )}
               </div>
             </section>
@@ -257,9 +268,9 @@ export function TeamsPage() {
           {canManage && (
             <section className="teams-unassigned">
               <div>
-                <span className="teams-overline">إدارة الأفراد</span>
+                <span className="teams-overline">{t('teams.peopleAdmin')}</span>
                 <h2>
-                  موظفون دون فريق <span>{unassigned.length}</span>
+                  {t('teams.unassigned')} <span>{unassigned.length}</span>
                 </h2>
               </div>
               {unassigned.length ? (
@@ -268,7 +279,11 @@ export function TeamsPage() {
                     <StaffRow
                       key={staff.id}
                       staff={staff}
-                      role={staff.role === 'engineer' ? 'مهندس · دون فريق' : 'فني · دون فريق'}
+                      role={t(
+                        staff.role === 'engineer'
+                          ? 'teams.unassignedEngineer'
+                          : 'teams.unassignedTechnician',
+                      )}
                       directory={directory}
                       admin
                       onAction={setDialog}
@@ -276,25 +291,19 @@ export function TeamsPage() {
                   ))}
                 </div>
               ) : (
-                <p>كل الموظفين موزعون على الهيكل الحالي.</p>
+                <p>{t('teams.allAssigned')}</p>
               )}
             </section>
           )}
           {directory.contactsRestricted && canManage && (
-            <p className="teams-hint">
-              أرقام الهاتف غير متاحة حاليًا. بقية بيانات الفريق قابلة للعرض والإدارة.
-            </p>
+            <p className="teams-hint">{t('teams.contactsRestricted')}</p>
           )}
         </>
       ) : (
         <div className="teams-state">
           <div className="teams-state-icon">⌁</div>
-          <h2>لا توجد فرق صيانة بعد</h2>
-          <p>
-            {env.isDemo
-              ? 'يتطلب عرض الفريق الاتصال بقاعدة بيانات Supabase.'
-              : 'لم تُسجّل فرق في قاعدة البيانات.'}
-          </p>
+          <h2>{t('teams.empty')}</h2>
+          <p>{env.isDemo ? t('teams.demoEmpty') : t('teams.databaseEmpty')}</p>
         </div>
       )}
       {dialog && directory && (
