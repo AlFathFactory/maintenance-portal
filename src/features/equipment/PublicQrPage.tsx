@@ -19,26 +19,63 @@ export function PublicQrPage() {
   return (
     <div className="public-qr-page">
       <header className="public-qr-header">
-        <div className="public-qr-brand"><span className="brand-mark">F</span><div><strong>{t('shell.factory')}</strong><small>{t('shell.department')}</small></div></div>
+        <div className="public-qr-brand">
+          <span className="brand-mark">F</span>
+          <div>
+            <strong>{t('shell.factory')}</strong>
+            <small>{t('shell.department')}</small>
+          </div>
+        </div>
         <LanguageSwitcher />
       </header>
       <main className="public-qr-main">
         {invalid ? (
-          <div className="public-qr-state"><span aria-hidden="true">⌁</span><h1>{t('qrPublic.invalidTitle')}</h1><p>{t('qrPublic.invalidDescription')}</p></div>
+          <div className="public-qr-state">
+            <span aria-hidden="true">⌁</span>
+            <h1>{t('qrPublic.invalidTitle')}</h1>
+            <p>{t('qrPublic.invalidDescription')}</p>
+          </div>
         ) : query.isPending ? (
-          <div className="public-qr-state" role="status"><span className="public-qr-pulse" aria-hidden="true" /><h1>{t('qrPublic.loading')}</h1></div>
+          <div className="public-qr-state" role="status">
+            <span className="public-qr-pulse" aria-hidden="true" />
+            <h1>{t('qrPublic.loading')}</h1>
+          </div>
         ) : query.isError ? (
-          <div className="public-qr-state" role="alert"><h1>{t('qrPublic.loadError')}</h1><button className="outline-button" onClick={() => void query.refetch()}>{t('common.retry')}</button></div>
+          <div className="public-qr-state" role="alert">
+            <h1>{t('qrPublic.loadError')}</h1>
+            <button className="outline-button" onClick={() => void query.refetch()}>
+              {t('common.retry')}
+            </button>
+          </div>
         ) : details ? (
           <div className="public-qr-content">
             <div className="public-qr-eyebrow">{t('qrPublic.equipmentProfile')}</div>
             <section className="public-qr-hero">
-              <div className="public-qr-type"><EquipmentIcon type={details.equipment.type} /> {t(`equipmentType.${details.equipment.type}`)} <span>•</span> <bdi>{details.equipment.code}</bdi></div>
+              <div className="public-qr-type">
+                <EquipmentIcon type={details.equipment.type} />{' '}
+                {t(`equipmentType.${details.equipment.type}`)} <span>•</span>{' '}
+                <bdi>{details.equipment.code}</bdi>
+              </div>
               <h1 dir="auto">{equipmentText(details.equipment, 'name', language)}</h1>
-              <div className="public-qr-meta"><StatusBadge status={details.equipment.status} /><span dir="auto">⌖ {equipmentText(details.equipment, 'location', language) || t('equipment.locationMissing')}</span></div>
+              <div className="public-qr-meta">
+                <StatusBadge status={details.equipment.status} />
+                <span dir="auto">
+                  ⌖{' '}
+                  {equipmentText(details.equipment, 'location', language) ||
+                    t('equipment.locationMissing')}
+                </span>
+              </div>
             </section>
-            <section className="public-qr-panel"><h2>{t('equipment.details')}</h2><p>{t('equipment.detailsHint')}</p><EquipmentFields item={details.equipment} /></section>
-            <section className="public-qr-panel"><h2>{t('equipment.history')}</h2><p>{t('equipment.historyHint')}</p><MaintenanceHistory records={details.maintenanceRecords} /></section>
+            <section className="public-qr-panel">
+              <h2>{t('equipment.details')}</h2>
+              <p>{t('equipment.detailsHint')}</p>
+              <EquipmentFields item={details.equipment} />
+            </section>
+            <section className="public-qr-panel">
+              <h2>{t('equipment.history')}</h2>
+              <p>{t('equipment.historyHint')}</p>
+              <MaintenanceHistory records={details.maintenanceRecords} />
+            </section>
           </div>
         ) : null}
       </main>

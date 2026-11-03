@@ -10,6 +10,7 @@ import './shared/styles/components.css';
 import './styles/utilities.css';
 import './features/equipment/equipment.css';
 import './features/equipment/publicQr.css';
+import './features/equipment/qrSettings.css';
 import './features/maintenance/maintenance.css';
 import './features/teams/teams.css';
 import './shared/styles/modal.css';

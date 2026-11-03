@@ -21,7 +21,14 @@ const EquipmentPage = lazy(() =>
 const TeamsPage = lazy(() =>
   import('../features/teams/TeamsPage').then((module) => ({ default: module.TeamsPage })),
 );
-const PublicQrPage = lazy(() => import('../features/equipment/PublicQrPage').then((module) => ({ default: module.PublicQrPage })));
+const PublicQrPage = lazy(() =>
+  import('../features/equipment/PublicQrPage').then((module) => ({ default: module.PublicQrPage })),
+);
+const QrSettingsPage = lazy(() =>
+  import('../features/equipment/QrSettingsPage').then((module) => ({
+    default: module.QrSettingsPage,
+  })),
+);
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 1, refetchOnWindowFocus: false } },
 });
@@ -46,9 +53,17 @@ export function App() {
                     <Route path="dashboard" element={<DashboardPage />} />
                     <Route path="equipment" element={<DashboardPage />} />
                     <Route path="equipment/:slug" element={<EquipmentPage />} />
+                    <Route path="settings" element={<QrSettingsPage />} />
                   </Route>
                 </Route>
-                <Route path="*" element={<div className="not-found"><h1>{t('app.notFound')}</h1></div>} />
+                <Route
+                  path="*"
+                  element={
+                    <div className="not-found">
+                      <h1>{t('app.notFound')}</h1>
+                    </div>
+                  }
+                />
               </Routes>
             </Suspense>
           </HashRouter>

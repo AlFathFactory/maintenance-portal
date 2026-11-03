@@ -67,6 +67,8 @@ maintenance-portal/
     │   │   ├── EquipmentPage.tsx# Equipment details, history, QR and action modals
     │   │   ├── EquipmentFields.tsx # Shared localized specifications
     │   │   ├── PublicQrPage.tsx # Isolated single-equipment QR profile
+    │   │   ├── QrSettingsPage.tsx # Admin-only QR rotation with typed confirmation
+    │   │   ├── qrSettings.css  # QR settings layout
     │   │   ├── qrQueries.ts     # Token-scoped public/admin RPC hooks
     │   │   ├── publicQr.css    # QR profile and access screen styles
     │   │   ├── EquipmentForm.tsx# Add/edit equipment
@@ -104,7 +106,7 @@ maintenance-portal/
             ├── ErrorMessage.tsx  # Error display + optional retry
             ├── Field.tsx         # Label/value display with empty fallback
             ├── Modal.tsx         # Reusable modal wrapper/close behavior
-            ├── QrCard.tsx        # Admin token QR, rotation, PNG and print
+            ├── QrCard.tsx        # Admin token QR, high-resolution PNG and print
             ├── LanguageSwitcher.tsx # Shared AR/EN switcher
             ├── StatusBadge.tsx   # Consistent status display
             └── ToastProvider.tsx # Global toast provider + useToast()
@@ -125,6 +127,7 @@ main.tsx
             └── RequireAdmin → AppShell   # Admin shell after membership check
                  ├── /, /dashboard, /equipment # DashboardPage
                  └── /equipment/:slug      # EquipmentPage
+                 └── /settings             # QrSettingsPage
 
 UI (page/form)
   └── feature/queries.ts                   # useQuery / useMutation
@@ -144,7 +147,9 @@ Supabase INSERT into maintenance_records
 - **Equipment list:** `DashboardPage → useEquipmentList → repository.listEquipment → equipment`; dashboard filters search/type client-side.
 - **Admin equipment detail:** `/equipment/:slug → RequireAdmin → useEquipment(slug) → repository.getEquipment(slug)`. Visitors never mount this query, and RLS denies direct equipment-table reads.
 - **Public QR profile:** `/qr/:token → useQrEquipment(token) → repository.getEquipmentByQr → get_equipment_by_qr` returns one equipment, translations, and maintenance history. It has no shell or unrelated links/queries. Invalid tokens show an invalid/expired state.
-- **Admin QR card:** `QrCard → useEquipmentQrToken → get_equipment_qr_token`; the QR encodes `origin/path#/qr/<token>`. Confirmed rotation calls `rotate_equipment_qr_token`, updates the token cache, and regenerates the canvas. Tokens stay in memory only.
+- **Legacy QR links:** anonymous visits to `/equipment/:slug` show a localized outdated-QR notice with instructions to get a newly printed code; no equipment query mounts. Existing slug links cannot grant public access under the current RLS policy.
+- **Admin QR card:** `QrCard → useEquipmentQrToken → get_equipment_qr_token`; the QR encodes `origin/path#/qr/<token>`. The canvas is rendered at 1200 px with a four-module quiet zone for high-resolution PNG download and larger printing. Tokens stay in memory only.
+- **QR settings:** `/settings` is admin-only. It selects one equipment and requires typing its slug in a confirmation modal before `rotate_equipment_qr_token` runs. Rotation is absent from the equipment card because it immediately invalidates existing printed labels.
 - **Add/edit equipment:** `EquipmentForm → useEquipmentActions().create/update → repository.createEquipment/updateEquipment → equipment`; successful mutation invalidates all `['equipment']` queries.
 - **Localization:** `src/i18n` initializes Arabic by default, persists AR/EN in `localStorage`, and updates `<html lang>`/`dir`. `AppShell` provides the language switcher. React components use `useTranslation`; `formatDate` follows the current language.
 - **Equipment translations:** equipment list/detail reads join `equipment_translations`. `equipmentText()` resolves each field independently: selected English value, then Arabic translation, then the legacy Arabic equipment field. The paired form requires an Arabic name and accepts optional English text. Create/edit syncs the legacy Arabic fields and upserts both locales on `(equipment_id,locale)`; the demo repository follows the same model.

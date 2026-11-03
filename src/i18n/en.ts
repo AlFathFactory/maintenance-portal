@@ -27,6 +27,7 @@ export const en = {
     machines: 'Machines',
     cranes: 'Cranes',
     teams: 'Maintenance team',
+    settings: 'Settings',
     equipmentDetails: 'Equipment details',
     localDemo: 'Local demo',
     checking: 'Checking...',
@@ -155,21 +156,37 @@ export const en = {
     loading: 'Preparing secure QR code...',
     rotate: 'Rotate QR code',
     rotateTitle: 'Rotate access code',
-    rotateWarning: 'Previously printed QR codes will stop working immediately. Download or print the new code after continuing.',
+    rotateWarning:
+      'Previously printed QR codes will stop working immediately. Download or print the new code after continuing.',
     rotateConfirm: 'Rotate code',
     rotated: 'QR code rotated. Use the new code for printing.',
+  },
+  qrSettings: {
+    title: 'QR code settings',
+    description:
+      'Manage equipment access codes. Keep the current code while printed labels are in use.',
+    rotationTitle: 'Rotate an equipment code',
+    rotationDescription:
+      'Rotate only if a code is compromised or old labels must be revoked. Every printed code for this equipment stops working immediately.',
+    equipment: 'Choose equipment',
+    chooseEquipment: 'Select equipment to rotate',
+    confirmLabel: 'To confirm rotation, type the equipment identifier exactly: {{slug}}',
   },
   qrPublic: {
     equipmentProfile: 'Equipment profile',
     loading: 'Loading equipment profile...',
     invalidTitle: 'Invalid or expired QR code',
-    invalidDescription: 'Check the code attached to the equipment or ask the maintenance department for a new one.',
+    invalidDescription:
+      'Check the code attached to the equipment or ask the maintenance department for a new one.',
     loadError: 'Could not load equipment details. Please try again.',
   },
   access: {
     title: 'Admin access required',
     description: 'Sign in with a maintenance admin account to access the equipment dashboard.',
     unauthorized: 'This account is not authorized to access the equipment dashboard.',
+    legacyQrTitle: 'Outdated QR code',
+    legacyQrDescription:
+      'This code points to an older equipment link that visitors can no longer open. Ask a maintenance admin to print the new QR code from the equipment profile.',
   },
   teams: {
     eyebrow: 'Organization · Maintenance Department',

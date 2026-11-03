@@ -70,13 +70,17 @@ export const supabaseRepository: MaintenanceRepository = {
     return data === null ? null : parseQrEquipment(data);
   },
   async getEquipmentQrToken(equipmentId) {
-    const { data, error } = await client().rpc('get_equipment_qr_token', { p_equipment_id: equipmentId });
+    const { data, error } = await client().rpc('get_equipment_qr_token', {
+      p_equipment_id: equipmentId,
+    });
     if (error) throw error;
     if (typeof data !== 'string') throw new Error('QR_TOKEN_UNAVAILABLE');
     return data;
   },
   async rotateEquipmentQrToken(equipmentId) {
-    const { data, error } = await client().rpc('rotate_equipment_qr_token', { p_equipment_id: equipmentId });
+    const { data, error } = await client().rpc('rotate_equipment_qr_token', {
+      p_equipment_id: equipmentId,
+    });
     if (error) throw error;
     if (typeof data !== 'string') throw new Error('QR_TOKEN_UNAVAILABLE');
     return data;

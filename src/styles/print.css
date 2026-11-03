@@ -4,12 +4,13 @@
   }
   .sidebar,
   .topbar,
+  .mobile-nav,
   .back-link,
+  .detail-hero,
   .detail-main,
   .hero-actions,
   .qr-download,
   .qr-print,
-  .qr-rotate,
   .last-service,
   .toast {
     display: none !important;
@@ -27,14 +28,28 @@
     display: block;
   }
   .detail-side {
-    width: 90mm;
+    display: block;
+    width: 110mm;
     margin: 0 auto;
   }
   .qr-panel {
+    max-width: none;
+    width: 110mm;
     background: #fff;
     color: #0c3039;
     box-shadow: none;
     border: 1px solid #ddd;
+    padding: 5mm;
+    break-inside: avoid;
+  }
+  .qr-frame {
+    width: 100%;
+    padding: 0;
+    aspect-ratio: auto;
+  }
+  .qr-frame canvas {
+    width: 100%;
+    height: auto;
   }
   .qr-panel p,
   .qr-overline {

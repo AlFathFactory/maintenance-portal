@@ -14,6 +14,7 @@ export function AppShell() {
   const toast = useToast();
   const detail = useLocation().pathname.startsWith('/equipment/');
   const teamsPage = useLocation().pathname === '/teams';
+  const settingsPage = useLocation().pathname === '/settings';
 
   async function logout() {
     try {
@@ -48,6 +49,14 @@ export function AppShell() {
           <NavLink to="/teams" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
             ♧ <span>{t('shell.teams')}</span>
           </NavLink>
+          {isAdmin && (
+            <NavLink
+              to="/settings"
+              className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+            >
+              ⚙ <span>{t('shell.settings')}</span>
+            </NavLink>
+          )}
         </nav>
         <div className="sidebar-bottom">
           <div className="sidebar-note">
@@ -72,7 +81,9 @@ export function AppShell() {
               ? t('shell.equipmentDetails')
               : teamsPage
                 ? t('shell.teams')
-                : t('shell.dashboard')}
+                : settingsPage
+                  ? t('shell.settings')
+                  : t('shell.dashboard')}
           </div>
           <div className="top-actions">
             <LanguageSwitcher />
@@ -109,6 +120,11 @@ export function AppShell() {
           <NavLink to="/teams" className={({ isActive }) => (isActive ? 'active' : '')}>
             {t('shell.teams')}
           </NavLink>
+          {isAdmin && (
+            <NavLink to="/settings" className={({ isActive }) => (isActive ? 'active' : '')}>
+              {t('shell.settings')}
+            </NavLink>
+          )}
         </nav>
         <main>
           {error && (

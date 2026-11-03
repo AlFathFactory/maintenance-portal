@@ -10,18 +10,46 @@ export function AccessDeniedPage() {
   const { user, isAdmin, loading, signOut } = useAuth();
   const location = useLocation();
   const [loginOpen, setLoginOpen] = useState(false);
-  const from = (location.state as { from?: string } | null)?.from;
-  if (loading) return <div className="loading" role="status">{t('shell.checking')}</div>;
-  if (isAdmin) return <Navigate to={from?.startsWith('/') && !from.startsWith('//') ? from : '/'} replace />;
+  const routeState = location.state as { from?: string; legacyEquipmentLink?: boolean } | null;
+  const from = routeState?.from;
+  const legacyQrForVisitor = Boolean(routeState?.legacyEquipmentLink && !user);
+  if (loading)
+    return (
+      <div className="loading" role="status">
+        {t('shell.checking')}
+      </div>
+    );
+  if (isAdmin)
+    return <Navigate to={from?.startsWith('/') && !from.startsWith('//') ? from : '/'} replace />;
   return (
     <main className="access-page">
-      <div className="access-language"><LanguageSwitcher /></div>
+      <div className="access-language">
+        <LanguageSwitcher />
+      </div>
       <div className="access-card">
-        <span className="access-icon" aria-hidden="true">⌁</span>
+        <span className="access-icon" aria-hidden="true">
+          ⌁
+        </span>
         <span className="eyebrow">{t('shell.department')}</span>
-        <h1>{t('access.title')}</h1>
-        <p>{t(user ? 'access.unauthorized' : 'access.description')}</p>
-        {user ? <button className="outline-button" onClick={() => void signOut()}>{t('shell.logout')}</button> : <button className="primary-button" onClick={() => setLoginOpen(true)}>{t('shell.login')}</button>}
+        <h1>{t(legacyQrForVisitor ? 'access.legacyQrTitle' : 'access.title')}</h1>
+        <p>
+          {t(
+            legacyQrForVisitor
+              ? 'access.legacyQrDescription'
+              : user
+                ? 'access.unauthorized'
+                : 'access.description',
+          )}
+        </p>
+        {legacyQrForVisitor ? null : user ? (
+          <button className="outline-button" onClick={() => void signOut()}>
+            {t('shell.logout')}
+          </button>
+        ) : (
+          <button className="primary-button" onClick={() => setLoginOpen(true)}>
+            {t('shell.login')}
+          </button>
+        )}
       </div>
       {loginOpen && <LoginModal onClose={() => setLoginOpen(false)} />}
     </main>
