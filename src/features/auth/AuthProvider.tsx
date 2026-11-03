@@ -18,9 +18,11 @@ const AuthContext = createContext<AuthState | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const [user, setUser] = useState<User | null>(null);
-  const [isAdmin, setIsAdmin] = useState(env.isDemo);
+  const [verifiedAdminId, setVerifiedAdminId] = useState<string | null>(null);
+  const [sessionReady, setSessionReady] = useState(env.isDemo);
   const [loading, setLoading] = useState(!env.isDemo);
   const [error, setError] = useState<string | null>(null);
+  const isAdmin = env.isDemo || Boolean(user && verifiedAdminId === user.id);
 
   useEffect(() => {
     if (!supabase) return;
@@ -29,22 +31,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!alive) return;
       setUser(data.session?.user ?? null);
       if (sessionError) setError(sessionError.message);
+      setSessionReady(true);
     });
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (alive) setUser(session?.user ?? null);
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!alive) return;
+      setUser(session?.user ?? null);
+      setSessionReady(true);
+      if (event === 'SIGNED_OUT') {
+        setVerifiedAdminId(null);
+        queryClient.clear();
+      }
     });
     return () => {
       alive = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [queryClient]);
 
   useEffect(() => {
     if (!supabase) return;
+    if (!sessionReady) return;
     if (!user) {
-      setIsAdmin(false);
+      setVerifiedAdminId(null);
       setLoading(false);
       return;
     }
@@ -57,14 +67,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .maybeSingle()
       .then(({ data, error: membershipError }) => {
         if (!alive) return;
-        setIsAdmin(Boolean(data));
+        setVerifiedAdminId(data ? user.id : null);
+        if (!data) queryClient.clear();
         setError(membershipError?.message ?? null);
         setLoading(false);
       });
     return () => {
       alive = false;
     };
-  }, [user?.id]);
+  }, [user?.id, sessionReady, queryClient]);
 
   const value = useMemo<AuthState>(
     () => ({
@@ -81,9 +92,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!supabase) return;
         const { error: signOutError } = await supabase.auth.signOut();
         if (signOutError) throw signOutError;
-        queryClient.removeQueries({ queryKey: ['maintenance'] });
-        queryClient.removeQueries({ queryKey: ['teams'] });
-        setIsAdmin(false);
+        setVerifiedAdminId(null);
+        queryClient.clear();
       },
     }),
     [user, isAdmin, loading, error, queryClient],

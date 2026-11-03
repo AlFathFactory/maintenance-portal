@@ -174,6 +174,13 @@
   font-size: 11px;
   font-weight: 800;
 }
+.qr-frame { position: relative; }
+.qr-canvas-waiting { opacity: 0; }
+.qr-frame-loading { position: absolute; inset: 0; display: grid; place-items: center; color: #81979a; font-size: 12px; }
+.qr-download:disabled, .qr-print:disabled, .qr-rotate:disabled { opacity: .5; cursor: wait; }
+.qr-rotate { display: block; width: 100%; margin-top: 10px; padding: 9px; border: 1px solid #6f9999; border-radius: 8px; background: transparent; color: #d6efeb; font-size: 11px; font-weight: 800; }
+.qr-rotate:hover { background: #ffffff16; }
+.qr-rotate-warning { color: #5e797c; line-height: 1.7; }
 .qr-download {
   background: #1aa88e;
   border: 1px solid #1aa88e;

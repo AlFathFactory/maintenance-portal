@@ -152,6 +152,24 @@ export const en = {
     print: 'Print card',
     canvasLine1: 'Scan QR code',
     canvasLine2: 'to open equipment profile',
+    loading: 'Preparing secure QR code...',
+    rotate: 'Rotate QR code',
+    rotateTitle: 'Rotate access code',
+    rotateWarning: 'Previously printed QR codes will stop working immediately. Download or print the new code after continuing.',
+    rotateConfirm: 'Rotate code',
+    rotated: 'QR code rotated. Use the new code for printing.',
+  },
+  qrPublic: {
+    equipmentProfile: 'Equipment profile',
+    loading: 'Loading equipment profile...',
+    invalidTitle: 'Invalid or expired QR code',
+    invalidDescription: 'Check the code attached to the equipment or ask the maintenance department for a new one.',
+    loadError: 'Could not load equipment details. Please try again.',
+  },
+  access: {
+    title: 'Admin access required',
+    description: 'Sign in with a maintenance admin account to access the equipment dashboard.',
+    unauthorized: 'This account is not authorized to access the equipment dashboard.',
   },
   teams: {
     eyebrow: 'Organization · Maintenance Department',
@@ -235,5 +253,8 @@ export const en = {
     demoUnavailable: 'Connect to Supabase to manage the team.',
     supabaseUnavailable: 'Supabase connection is not configured.',
     staffDeleteFailed: 'Could not delete the employee.',
+    qrDemoUnavailable: 'Secure QR codes are unavailable in the local demo.',
+    qrTokenUnavailable: 'Could not load the QR code. Please try again.',
+    qrResponseInvalid: 'Could not read equipment details from the QR code.',
   },
 };

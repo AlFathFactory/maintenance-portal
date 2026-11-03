@@ -8,6 +8,7 @@ import type {
   EquipmentTextField,
 } from '../domain/equipment';
 import { equipmentTextFields } from '../domain/equipment';
+import { parseQrEquipment } from '../domain/qrEquipment';
 
 type EquipmentRow = Omit<Equipment, 'translations'> & {
   equipment_translations?: TranslationRow[];
@@ -62,6 +63,23 @@ export const supabaseRepository: MaintenanceRepository = {
       .maybeSingle();
     if (error) throw error;
     return data ? withTranslations(data as EquipmentRow) : null;
+  },
+  async getEquipmentByQr(token) {
+    const { data, error } = await client().rpc('get_equipment_by_qr', { p_token: token });
+    if (error) throw error;
+    return data === null ? null : parseQrEquipment(data);
+  },
+  async getEquipmentQrToken(equipmentId) {
+    const { data, error } = await client().rpc('get_equipment_qr_token', { p_equipment_id: equipmentId });
+    if (error) throw error;
+    if (typeof data !== 'string') throw new Error('QR_TOKEN_UNAVAILABLE');
+    return data;
+  },
+  async rotateEquipmentQrToken(equipmentId) {
+    const { data, error } = await client().rpc('rotate_equipment_qr_token', { p_equipment_id: equipmentId });
+    if (error) throw error;
+    if (typeof data !== 'string') throw new Error('QR_TOKEN_UNAVAILABLE');
+    return data;
   },
   async createEquipment(input) {
     const slug = `equipment-${crypto.randomUUID().slice(0, 10)}`;

@@ -150,6 +150,24 @@ export const ar = {
     print: 'طباعة البطاقة',
     canvasLine1: 'امسح رمز QR',
     canvasLine2: 'لفتح ملف المعدة',
+    loading: 'جارٍ تجهيز رمز QR الآمن...',
+    rotate: 'تجديد رمز QR',
+    rotateTitle: 'تجديد رمز الوصول',
+    rotateWarning: 'ستتوقف رموز QR المطبوعة سابقًا عن العمل فور التجديد. اطبع أو حمّل الرمز الجديد بعد المتابعة.',
+    rotateConfirm: 'تجديد الرمز',
+    rotated: 'تم تجديد رمز QR. استخدم الرمز الجديد للطباعة.',
+  },
+  qrPublic: {
+    equipmentProfile: 'ملف المعدة',
+    loading: 'جارٍ تحميل ملف المعدة...',
+    invalidTitle: 'رمز QR غير صالح أو منتهي',
+    invalidDescription: 'تحقق من الرمز المثبّت على المعدة أو اطلب رمزًا جديدًا من قسم الصيانة.',
+    loadError: 'تعذر تحميل بيانات المعدة. حاول مرة أخرى.',
+  },
+  access: {
+    title: 'هذه الصفحة للمسؤولين فقط',
+    description: 'سجّل الدخول بحساب مسؤول الصيانة للوصول إلى لوحة المعدات.',
+    unauthorized: 'هذا الحساب غير مخوّل للوصول إلى لوحة المعدات.',
   },
   teams: {
     eyebrow: 'الهيكل التنظيمي · قسم الصيانة',
@@ -228,5 +246,8 @@ export const ar = {
     demoUnavailable: 'إدارة الفريق متاحة عند الاتصال بقاعدة بيانات Supabase.',
     supabaseUnavailable: 'لم يُضبط اتصال Supabase.',
     staffDeleteFailed: 'تعذر حذف الموظف.',
+    qrDemoUnavailable: 'رموز QR الآمنة غير متاحة في النسخة التجريبية المحلية.',
+    qrTokenUnavailable: 'تعذر تحميل رمز QR. حاول مرة أخرى.',
+    qrResponseInvalid: 'تعذر قراءة بيانات المعدة من رمز QR.',
   },
 };

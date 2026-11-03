@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import type { Equipment, EquipmentTextField } from '../../domain/equipment';
 import { equipmentText } from '../../domain/localizedEquipment';
 import type { AppLanguage } from '../../i18n';
 import { useAuth } from '../auth/AuthProvider';
@@ -10,44 +9,15 @@ import { MaintenanceForm } from '../maintenance/MaintenanceForm';
 import { MaintenanceHistory } from '../maintenance/MaintenanceHistory';
 import { EquipmentIcon } from '../../shared/ui/EquipmentIcon';
 import { StatusBadge } from '../../shared/ui/StatusBadge';
-import { Field } from '../../shared/ui/Field';
 import { QrCard } from '../../shared/ui/QrCard';
 import { ErrorMessage } from '../../shared/ui/ErrorMessage';
 import { formatDate } from '../../shared/date';
 import { useEquipment } from './queries';
 import { EquipmentForm } from './EquipmentForm';
 import { StatusForm } from './StatusForm';
+import { EquipmentFields } from './EquipmentFields';
 
 type FormKind = 'equipment' | 'status' | 'maintenance' | null;
-
-function EquipmentFields({ item }: { item: Equipment }) {
-  const { t, i18n } = useTranslation();
-  const language: AppLanguage = i18n.language === 'en' ? 'en' : 'ar';
-  const fields: [string, string][] = [
-    [t('equipment.name'), equipmentText(item, 'name', language)],
-    [t('equipment.code'), item.code],
-    ...(['model', 'power', 'made_in', 'location'] as EquipmentTextField[]).map(
-      (field) =>
-        [t(`equipment.${field}`), equipmentText(item, field, language)] as [string, string],
-    ),
-    ...(item.type === 'crane'
-      ? (['max_load', 'height', 'width'] as EquipmentTextField[]).map(
-          (field) =>
-            [t(`equipment.${field}`), equipmentText(item, field, language)] as [string, string],
-        )
-      : (['length_spec', 'p_spec'] as EquipmentTextField[]).map(
-          (field) =>
-            [t(`equipment.${field}`), equipmentText(item, field, language)] as [string, string],
-        )),
-  ];
-  return (
-    <div className="field-grid">
-      {fields.map(([label, value]) => (
-        <Field key={label} label={label} value={value} />
-      ))}
-    </div>
-  );
-}
 
 export function EquipmentPage() {
   const { t, i18n } = useTranslation();

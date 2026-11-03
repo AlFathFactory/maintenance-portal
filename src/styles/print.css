@@ -9,6 +9,7 @@
   .hero-actions,
   .qr-download,
   .qr-print,
+  .qr-rotate,
   .last-service,
   .toast {
     display: none !important;

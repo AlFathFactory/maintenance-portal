@@ -44,6 +44,15 @@ export const demoRepository: MaintenanceRepository = {
   async getEquipment(slug) {
     return read().equipment.find((item) => item.slug === slug) ?? null;
   },
+  async getEquipmentByQr() {
+    throw new Error('QR_DEMO_UNAVAILABLE');
+  },
+  async getEquipmentQrToken() {
+    throw new Error('QR_DEMO_UNAVAILABLE');
+  },
+  async rotateEquipmentQrToken() {
+    throw new Error('QR_DEMO_UNAVAILABLE');
+  },
   async createEquipment(input: EquipmentInput) {
     const data = read();
     const item: Equipment = {

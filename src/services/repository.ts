@@ -1,10 +1,14 @@
 import type { Equipment, EquipmentInput, EquipmentStatus } from '../domain/equipment';
 import type { MaintenanceInput, MaintenanceRecord } from '../domain/maintenance';
 import type { Staff, StaffInput, TeamDirectory } from '../features/teams/types';
+import type { QrEquipmentDetails } from '../domain/qrEquipment';
 
 export interface MaintenanceRepository {
   listEquipment(): Promise<Equipment[]>;
   getEquipment(slug: string): Promise<Equipment | null>;
+  getEquipmentByQr(token: string): Promise<QrEquipmentDetails | null>;
+  getEquipmentQrToken(equipmentId: string): Promise<string>;
+  rotateEquipmentQrToken(equipmentId: string): Promise<string>;
   createEquipment(input: EquipmentInput): Promise<Equipment>;
   updateEquipment(id: string, input: EquipmentInput): Promise<Equipment>;
   updateStatus(id: string, status: EquipmentStatus): Promise<Equipment>;

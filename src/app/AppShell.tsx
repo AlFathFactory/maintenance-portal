@@ -5,9 +5,10 @@ import { env } from '../config/env';
 import { useAuth } from '../features/auth/AuthProvider';
 import { LoginModal } from '../features/auth/LoginModal';
 import { useToast } from '../shared/ui/ToastProvider';
+import { LanguageSwitcher } from '../shared/ui/LanguageSwitcher';
 
 export function AppShell() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const [loginOpen, setLoginOpen] = useState(false);
   const { user, isAdmin, loading, error, signOut } = useAuth();
   const toast = useToast();
@@ -74,19 +75,7 @@ export function AppShell() {
                 : t('shell.dashboard')}
           </div>
           <div className="top-actions">
-            <div className="language-switch" role="group" aria-label={t('shell.language')}>
-              {(['ar', 'en'] as const).map((language) => (
-                <button
-                  key={language}
-                  type="button"
-                  className={i18n.language === language ? 'active' : ''}
-                  aria-pressed={i18n.language === language}
-                  onClick={() => void i18n.changeLanguage(language)}
-                >
-                  {language.toUpperCase()}
-                </button>
-              ))}
-            </div>
+            <LanguageSwitcher />
             {env.isDemo && <span className="demo-pill">{t('shell.localDemo')}</span>}
             {loading ? (
               <span className="account-chip">{t('shell.checking')}</span>

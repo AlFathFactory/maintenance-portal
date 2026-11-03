@@ -6,6 +6,9 @@ const errorKeys = {
   TEAM_DEMO_UNAVAILABLE: 'errors.demoUnavailable',
   SUPABASE_UNAVAILABLE: 'errors.supabaseUnavailable',
   STAFF_DELETE_FAILED: 'errors.staffDeleteFailed',
+  QR_DEMO_UNAVAILABLE: 'errors.qrDemoUnavailable',
+  QR_TOKEN_UNAVAILABLE: 'errors.qrTokenUnavailable',
+  QR_RESPONSE_INVALID: 'errors.qrResponseInvalid',
 } as const;
 
 export function ErrorMessage({ error, retry }: { error: unknown; retry?(): void }) {

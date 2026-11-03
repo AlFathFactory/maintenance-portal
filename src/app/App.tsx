@@ -5,6 +5,8 @@ import { HashRouter, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from '../features/auth/AuthProvider';
 import { ToastProvider } from '../shared/ui/ToastProvider';
 import { AppShell } from './AppShell';
+import { RequireAdmin } from '../features/auth/RequireAdmin';
+import { AccessDeniedPage } from '../features/auth/AccessDeniedPage';
 
 const DashboardPage = lazy(() =>
   import('../features/equipment/DashboardPage').then((module) => ({
@@ -19,6 +21,7 @@ const EquipmentPage = lazy(() =>
 const TeamsPage = lazy(() =>
   import('../features/teams/TeamsPage').then((module) => ({ default: module.TeamsPage })),
 );
+const PublicQrPage = lazy(() => import('../features/equipment/PublicQrPage').then((module) => ({ default: module.PublicQrPage })));
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 1, refetchOnWindowFocus: false } },
 });
@@ -32,19 +35,20 @@ export function App() {
           <HashRouter>
             <Suspense fallback={<div className="loading">{t('app.loading')}</div>}>
               <Routes>
+                <Route path="qr/:token" element={<PublicQrPage />} />
+                <Route path="access-denied" element={<AccessDeniedPage />} />
                 <Route element={<AppShell />}>
-                  <Route index element={<DashboardPage />} />
-                  <Route path="equipment/:slug" element={<EquipmentPage />} />
                   <Route path="teams" element={<TeamsPage />} />
-                  <Route
-                    path="*"
-                    element={
-                      <div className="not-found">
-                        <h1>{t('app.notFound')}</h1>
-                      </div>
-                    }
-                  />
                 </Route>
+                <Route element={<RequireAdmin />}>
+                  <Route element={<AppShell />}>
+                    <Route index element={<DashboardPage />} />
+                    <Route path="dashboard" element={<DashboardPage />} />
+                    <Route path="equipment" element={<DashboardPage />} />
+                    <Route path="equipment/:slug" element={<EquipmentPage />} />
+                  </Route>
+                </Route>
+                <Route path="*" element={<div className="not-found"><h1>{t('app.notFound')}</h1></div>} />
               </Routes>
             </Suspense>
           </HashRouter>

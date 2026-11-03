@@ -6,7 +6,7 @@
 
 ## 1. What this system does
 
-Arabic/English factory maintenance portal. Arabic is the default RTL language; English uses LTR. Visitors browse equipment, status, equipment-specific QR codes and public equipment details. Authenticated **maintenance admins** can add/update equipment, change statuses and record repairs/periodic maintenance. The codebase contains both a live Supabase repository and a browser-local demo implementation.
+Arabic/English factory maintenance portal. Arabic is the default RTL language; English uses LTR. Visitors with a valid QR token see only its equipment profile and maintenance history; the team directory remains public. Authenticated **maintenance admins** access the full dashboard, manage equipment, rotate QR tokens, change statuses and record maintenance. The codebase contains both a live Supabase repository and a browser-local demo implementation.
 
 **Stack:** React 19, TypeScript, Vite, React Router 7 (`HashRouter`), TanStack React Query 5, `@supabase/supabase-js` 2, `i18next`, `react-i18next`, `qrcode`, plain CSS.
 
@@ -52,16 +52,23 @@ maintenance-portal/
     ├── domain/
     │   ├── equipment.ts         # Equipment types, statuses and bilingual input types
     │   ├── localizedEquipment.ts # Per-field equipment fallback and form values
+    │   ├── qrEquipment.ts       # Typed public QR RPC payload parser
     │   └── maintenance.ts       # Maintenance types, input and record interfaces
     ├── features/
     │   ├── auth/
     │   │   ├── AuthProvider.tsx  # Supabase session, admin lookup, useAuth()
+    │   │   ├── RequireAdmin.tsx  # Guard before admin routes and queries mount
+    │   │   ├── AccessDeniedPage.tsx # Standalone login/access screen
     │   │   └── LoginModal.tsx   # Sign-in form
     │   ├── equipment/
     │   │   ├── DashboardPage.tsx# List, dashboard stats, search and filters
     │   │   ├── dashboard.css    # Dashboard layout, tabs, and table
     │   │   ├── equipment.css    # Equipment detail and summary layout
     │   │   ├── EquipmentPage.tsx# Equipment details, history, QR and action modals
+    │   │   ├── EquipmentFields.tsx # Shared localized specifications
+    │   │   ├── PublicQrPage.tsx # Isolated single-equipment QR profile
+    │   │   ├── qrQueries.ts     # Token-scoped public/admin RPC hooks
+    │   │   ├── publicQr.css    # QR profile and access screen styles
     │   │   ├── EquipmentForm.tsx# Add/edit equipment
     │   │   ├── StatusForm.tsx   # Change equipment status
     │   │   └── queries.ts      # Equipment React Query hooks/mutations/keys
@@ -97,7 +104,8 @@ maintenance-portal/
             ├── ErrorMessage.tsx  # Error display + optional retry
             ├── Field.tsx         # Label/value display with empty fallback
             ├── Modal.tsx         # Reusable modal wrapper/close behavior
-            ├── QrCard.tsx        # Equipment QR generation, PNG export, printing
+            ├── QrCard.tsx        # Admin token QR, rotation, PNG and print
+            ├── LanguageSwitcher.tsx # Shared AR/EN switcher
             ├── StatusBadge.tsx   # Consistent status display
             └── ToastProvider.tsx # Global toast provider + useToast()
 ```
@@ -111,10 +119,12 @@ main.tsx
        ├── AuthProvider                    # user, isAdmin, signIn/out
        ├── ToastProvider                   # success/error toast access
        └── HashRouter
-            └── AppShell                   # sidebar, header, auth controls, Outlet
-                 ├── /                     # DashboardPage
+            ├── /qr/:token                 # PublicQrPage: one equipment, no shell
+            ├── /access-denied             # Standalone sign-in/access notice
+            ├── /teams                     # Public directory, admin actions only
+            └── RequireAdmin → AppShell   # Admin shell after membership check
+                 ├── /, /dashboard, /equipment # DashboardPage
                  └── /equipment/:slug      # EquipmentPage
-                 └── /teams                # TeamsPage: public organizational chart, admin actions
 
 UI (page/form)
   └── feature/queries.ts                   # useQuery / useMutation
@@ -132,14 +142,16 @@ Supabase INSERT into maintenance_records
 ### Typical read and write flows
 
 - **Equipment list:** `DashboardPage → useEquipmentList → repository.listEquipment → equipment`; dashboard filters search/type client-side.
-- **Equipment detail / QR:** route `/equipment/:slug → useEquipment(slug) → repository.getEquipment(slug)`; `QrCard` generates a URL such as `origin/path#/equipment/<encoded-slug>`.
+- **Admin equipment detail:** `/equipment/:slug → RequireAdmin → useEquipment(slug) → repository.getEquipment(slug)`. Visitors never mount this query, and RLS denies direct equipment-table reads.
+- **Public QR profile:** `/qr/:token → useQrEquipment(token) → repository.getEquipmentByQr → get_equipment_by_qr` returns one equipment, translations, and maintenance history. It has no shell or unrelated links/queries. Invalid tokens show an invalid/expired state.
+- **Admin QR card:** `QrCard → useEquipmentQrToken → get_equipment_qr_token`; the QR encodes `origin/path#/qr/<token>`. Confirmed rotation calls `rotate_equipment_qr_token`, updates the token cache, and regenerates the canvas. Tokens stay in memory only.
 - **Add/edit equipment:** `EquipmentForm → useEquipmentActions().create/update → repository.createEquipment/updateEquipment → equipment`; successful mutation invalidates all `['equipment']` queries.
 - **Localization:** `src/i18n` initializes Arabic by default, persists AR/EN in `localStorage`, and updates `<html lang>`/`dir`. `AppShell` provides the language switcher. React components use `useTranslation`; `formatDate` follows the current language.
 - **Equipment translations:** equipment list/detail reads join `equipment_translations`. `equipmentText()` resolves each field independently: selected English value, then Arabic translation, then the legacy Arabic equipment field. The paired form requires an Arabic name and accepts optional English text. Create/edit syncs the legacy Arabic fields and upserts both locales on `(equipment_id,locale)`; the demo repository follows the same model.
 - **Change status:** `StatusForm → useEquipmentActions().setStatus → repository.updateStatus → equipment`; equipment cache invalidated.
 - **Read maintenance:** `EquipmentPage → useMaintenance(equipmentId, enabled) → repository.listMaintenance → maintenance_records`, ordered by `performed_on` descending.
 - **Create maintenance:** `MaintenanceForm → useCreateMaintenance → repository.createMaintenance → maintenance_records`; successful mutation invalidates `['maintenance', equipmentId]` and `['equipment']`; the database trigger updates the equipment summary.
-- **Admin access:** `AuthProvider` receives Supabase Auth session, then checks `maintenance_admins` for the current user; `useAuth().isAdmin` controls frontend action visibility. **RLS is the actual security boundary.**
+- **Admin access:** `AuthProvider` checks the session and `maintenance_admins`; `RequireAdmin` waits before mounting admin routes. Sign-out clears equipment, maintenance, QR, and team query caches. **RLS is the actual security boundary.**
 - **Team directory:** `TeamsPage → useTeamDirectory() → repository.listTeamDirectory` reads staff, teams, memberships and public contact numbers. `CallButton` shows a validated `tel:` link when a number exists. Team query caches are cleared on sign-out; contact writes remain admin-only.
 - **Responsive team UI:** `TeamsPage` builds each team's leader and members once from the directory. Desktop shows the engineer and both branches as a tree. At 768px and below, `TeamTabs` selects one team and `StaffRow` renders compact rows with call links beside names. Admin actions expand from each row without changing the repository or authorization flow.
 - **Team administration:** `TeamDialogs → useTeamActions → repository` handles staff, assignments and team updates. Membership transfers use one row update. Staff create and delete use compensating cleanup when a dependent request fails; these browser requests are not a database transaction.
@@ -174,21 +186,23 @@ Supabase INSERT into maintenance_records
 
 | Table | Important fields | Purpose |
 | --- | --- | --- |
-| `public.equipment` | `id` UUID, unique `slug`, `type`, `name`, specs, `status`, `last_maintenance_on` | Public inventory and equipment profile. |
-| `public.equipment_translations` | `(equipment_id, locale)` key, translated name and specs | Public AR/EN text; admin-only writes. Arabic equipment names are required. |
+| `public.equipment` | `id` UUID, unique `slug`, `type`, `name`, specs, `status`, `last_maintenance_on` | Admin inventory and equipment profile. |
+| `public.equipment_translations` | `(equipment_id, locale)` key, translated name and specs | Admin table reads/writes; public QR RPC returns the matched translations. Arabic equipment names are required. |
 | `public.maintenance_records` | `id`, `equipment_id` FK, `kind`, `performed_on`, `notes`, `status_after`, `created_by`, `created_at` | Maintenance history, repairs, periodic services. |
 | `public.maintenance_admins` | `user_id` FK to `auth.users` | Authorized maintenance admins. |
 | `public.maintenance_staff` | `id`, `full_name`, `role` | People in the department. |
 | `public.maintenance_teams` | `id`, `name`, `engineer_id`, `leader_id` | Team branches and their leads. |
 | `public.maintenance_team_members` | `team_id`, `staff_id` | Unique team assignment per staff member. |
 | `public.maintenance_staff_contacts` | `staff_id`, `phone` | Public phone details; admin-only writes. |
+| `public.get_equipment_by_qr(text)` | Public RPC | Returns one JSON equipment profile for a valid token; invalid tokens return null. |
+| `public.get_equipment_qr_token(uuid)` / `rotate_equipment_qr_token(uuid)` | Admin RPCs | Read or rotate one equipment token. |
 
 - Equipment types: `machine` and `crane`.
 - Equipment statuses: `unknown`, `operational`, `out_of_service`, `maintenance`.
 - Maintenance types: `repair`, `periodic`.
 - A maintenance INSERT invokes `private.apply_maintenance_record()`, updating last service date and optionally status. Do not duplicate this database business rule in frontend writes.
-- RLS is enabled on all three tables. Anonymous visitors can **SELECT equipment and maintenance records**. Admin-only policies still govern equipment INSERT/UPDATE and maintenance INSERT. Admin membership is checked via `maintenance_admins`. Do not assume authenticated = admin.
-- **Important live-backend vs repository mismatch as of review:** The backend policy was changed to `Anyone can read maintenance records` with `SELECT` granted to `anon`, but **the inspected `main` frontend still gates history fetching and rendering behind `isAdmin`** in `EquipmentPage.tsx`. If that frontend feature hasn't already been updated elsewhere, change the page and enable history reading for visitors without weakening write access.
+- RLS is enabled on equipment, translations, and maintenance records. Anonymous visitors have **no direct SELECT** on these tables. Authenticated users read them only when listed in `maintenance_admins`; the public QR RPC is the visitor path to one profile. Do not assume authenticated = admin.
+- Secure QR tokens live in `private.equipment_qr_access`. Never fetch a token list, persist tokens locally, or use a slug URL as a QR destination. The local demo has no secure token backend, so its QR methods report an unavailable state.
 - No deployed Edge Functions were found at review time; the project is not using a separate custom HTTP backend.
 - `supabase/schema.sql` represents the **original** schema and contains the old admin-only maintenance SELECT policy: **do not reapply it blindly** or treat it as an up-to-date migration history. Current backend state must be checked before migrations/changes. There were no recorded migrations at review time.
 - Security: public Supabase client uses the **publishable key only**. Never expose `service_role`/secret keys, and never depend on hidden buttons for authorization.
@@ -201,7 +215,7 @@ Supabase INSERT into maintenance_records
 3. **Maintain demo parity:** when adding repository methods, implement both `supabaseRepository` and `demoRepository`, or explicitly explain why a feature cannot run in demo mode.
 4. **Keep permissions separate:** public read and admin write are different capabilities; backend RLS enforces permission. Never expose secret keys.
 5. **After mutations:** invalidate specific React Query keys so list/detail/history stay fresh; preserve loading, error and empty states.
-6. **Keep the design:** Arabic labels, RTL layout, shared CSS patterns, and equipment URLs/QR stability. Avoid redesigning unrelated screens.
+6. **Keep the design:** bilingual labels, RTL/LTR layout, and shared CSS patterns. QR URLs use tokens; previously printed codes must be replaced after rotation.
 7. **Make small changes:** reuse existing components; avoid duplicate utility files, new global stores and unneeded abstractions.
 8. **When backend changes:** inspect live Supabase first; use safe migration/version-control workflow; preserve production data; document policy/schema updates and verify them.
 9. **When frontend changes:** do not assume a backend change is needed; user may assign backend and frontend work to different agents.
@@ -215,7 +229,7 @@ Supabase INSERT into maintenance_records
 | Add/change equipment statuses | `domain/equipment.ts`, `StatusForm.tsx` | Live DB constraints, `StatusBadge`, dashboard counters |
 | New maintenance fields | `domain/maintenance.ts`, `MaintenanceForm.tsx`, `MaintenanceHistory.tsx` | `maintenance/queries.ts`, repository implementations, DB schema |
 | Public/admin history visibility | `EquipmentPage.tsx`, `maintenance/queries.ts` | Supabase SELECT/INSERT grants and RLS |
-| QR label/navigation | `QrCard.tsx`, `App.tsx` | `slug`, HashRouter route, hosting paths |
+| QR label/navigation | `QrCard.tsx`, `PublicQrPage.tsx`, `App.tsx` | Token RPCs, HashRouter route, hosting paths |
 | Login/roles | `AuthProvider.tsx`, `LoginModal.tsx`, `AppShell.tsx` | Supabase Auth, `maintenance_admins`, RLS |
 | Dashboard search/filter | `DashboardPage.tsx` | `equipment/queries.ts`, equipment type labels |
 | Shared UI style/component | `shared/ui/`, `shared/styles/` | Existing usages in pages/forms |
