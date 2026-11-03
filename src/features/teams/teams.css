@@ -216,6 +216,15 @@
   display: grid;
   gap: 2px;
 }
+.teams-person-name {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.teams-person-name strong {
+  min-width: 0;
+}
 .teams-person-info strong {
   font-size: 15px;
   font-weight: 800;
@@ -351,6 +360,9 @@
 .teams-danger:hover {
   background: #9d3633;
 }
+.teams-mobile-directory {
+  display: none;
+}
 @keyframes teams-rise {
   from {
     opacity: 0;
@@ -377,29 +389,259 @@
     padding: 17px;
   }
 }
-@media (max-width: 760px) {
+@media (max-width: 768px) {
   .teams-page-header {
     align-items: flex-start;
-    margin-bottom: 24px;
+    margin-bottom: 20px;
   }
-  .teams-branches {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
-    padding-top: 48px;
+  .teams-page-header h1 {
+    font-size: 25px;
   }
-  .teams-branches::before {
-    height: 23px;
+  .teams-page-header p {
+    font-size: 12px;
   }
-  .teams-branches::after {
-    top: 22px;
+  .teams-chart {
+    display: none;
   }
-  .teams-branch::before {
-    height: 26px;
+  .teams-mobile-directory {
+    display: block;
+    min-width: 0;
   }
   .teams-skeleton-grid {
+    grid-template-columns: 1fr;
+    gap: 0;
+    margin-top: 18px;
+  }
+  .teams-skeleton-grid .teams-skeleton:last-child {
+    display: none;
+  }
+  .teams-skeleton-grid .teams-skeleton {
+    height: 260px;
+  }
+  .teams-mobile-hero {
+    border-radius: 18px;
+    padding: 17px 18px;
+    background: linear-gradient(140deg, #103d44, #0c2e38);
+    color: #fff;
+    box-shadow: 0 14px 28px #0c343522;
+  }
+  .teams-mobile-hero .teams-overline {
+    color: #85e5d2;
+    margin-bottom: 7px;
+  }
+  .teams-mobile-hero .teams-person-mobile {
+    border: 0;
+    padding: 0;
+    background: transparent;
+    color: #fff;
+  }
+  .teams-mobile-hero .teams-role,
+  .teams-mobile-hero .teams-call,
+  .teams-mobile-hero .teams-menu-trigger {
+    color: #d5f6ef;
+  }
+  .teams-tabs {
+    display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    padding: 5px;
+    margin: 20px 0 12px;
+    border: 1px solid #e2eceb;
+    border-radius: 14px;
+    background: #eaf1f0;
+  }
+  .teams-tabs button {
+    min-width: 0;
+    min-height: 44px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: #617d81;
+    font-size: 13px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    transition:
+      background 0.2s ease,
+      color 0.2s ease,
+      box-shadow 0.2s ease;
+  }
+  .teams-tabs button.active {
+    background: #fff;
+    color: #087d6b;
+    box-shadow: 0 3px 10px #173f4014;
+  }
+  .teams-tabs button:focus-visible,
+  .teams-menu-trigger:focus-visible,
+  .teams-mobile-team-edit:focus-visible {
+    outline: 2px solid #0a9e88;
+    outline-offset: 2px;
+  }
+  .teams-tab-count {
+    display: grid;
+    place-items: center;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 5px;
+    border-radius: 7px;
+    background: #dce9e7;
+    font-size: 11px;
+  }
+  .teams-tabs button.active .teams-tab-count {
+    background: #ddf4ec;
+  }
+  .teams-mobile-panel {
+    min-width: 0;
+    border: 1px solid #e3ebea;
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 8px 22px #153d3b0b;
+    overflow: hidden;
+    animation: teams-rise 0.25s ease both;
+  }
+  .teams-mobile-panel-head {
+    min-height: 64px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     gap: 12px;
-    margin-top: 48px;
+    padding: 12px 16px;
+    background: linear-gradient(100deg, #f1faf7, #fff);
+    border-bottom: 1px solid #e8efed;
+  }
+  .teams-mobile-panel-head span {
+    color: #6e9b93;
+    font-size: 10px;
+    font-weight: 800;
+  }
+  .teams-mobile-panel-head h2 {
+    margin: 2px 0 0;
+    font-size: 18px;
+  }
+  .teams-mobile-team-edit {
+    min-height: 44px;
+    border: 1px solid #cfe6e0;
+    border-radius: 9px;
+    background: #fff;
+    color: #0c816f;
+    padding: 0 11px;
+    font-size: 11px;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+  .teams-mobile-list {
+    padding: 6px 16px 9px;
+  }
+  .teams-mobile-section-label {
+    display: flex;
+    justify-content: space-between;
+    margin: 14px 0 2px;
+    color: #82989a;
+    font-size: 11px;
+    font-weight: 800;
+  }
+  .teams-person-mobile {
+    display: grid;
+    grid-template-columns: 38px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    padding: 9px 0;
+    border: 0;
+    border-bottom: 1px solid #edf2f1;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  .teams-person-mobile:last-child {
+    border-bottom: 0;
+  }
+  .teams-person-mobile:hover {
+    transform: none;
+    box-shadow: none;
+    border-color: #dbe9e6;
+  }
+  .teams-person-mobile .teams-person-info strong {
+    font-size: 14px;
+    line-height: 1.35;
+  }
+  .teams-person-mobile .teams-role {
+    width: auto;
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    color: #82989a;
+    font-size: 11px;
+  }
+  .teams-role-icon {
+    width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    border-radius: 11px;
+    background: #e4f5ef;
+    color: #138a74;
+    font-size: 19px;
+    line-height: 1;
+  }
+  .teams-role-icon-leader {
+    background: #e9f0fc;
+    color: #517eb5;
+    font-size: 16px;
+  }
+  .teams-role-icon-engineer {
+    background: #d9f8ec;
+    color: #0d745d;
+  }
+  .teams-person-mobile .teams-call,
+  .teams-menu-trigger {
+    width: 44px;
+    height: 44px;
+    min-height: 44px;
+    flex: 0 0 44px;
+    border-radius: 11px;
+  }
+  .teams-person-mobile .teams-call {
+    border-color: #d7ebe4;
+    color: #0c9279;
+    background: #effaf6;
+  }
+  .teams-menu-trigger {
+    border: 1px solid #e0eae9;
+    background: #fff;
+    color: #567a7e;
+    font-size: 24px;
+    line-height: 1;
+  }
+  .teams-mobile-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 3px 0 6px;
+  }
+  .teams-mobile-actions button {
+    min-height: 44px;
+    flex: 1 1 110px;
+    border: 1px solid #dce9e6;
+    border-radius: 8px;
+    background: #f5faf8;
+    color: #326e68;
+    font-size: 11px;
+    font-weight: 800;
+  }
+  .teams-mobile-actions .teams-mobile-delete {
+    color: #aa514c;
+    background: #fff4f2;
+    border-color: #f3dedb;
+  }
+  .teams-page-header .primary-button {
+    min-height: 44px;
+  }
+  .teams-unassigned-grid {
+    grid-template-columns: 1fr;
   }
 }
 @media (max-width: 530px) {
@@ -409,56 +651,20 @@
   .teams-page-header .primary-button {
     justify-self: start;
   }
-  .teams-branch-head {
-    gap: 7px;
-    padding: 12px 9px;
+  .teams-mobile-list {
+    padding-inline: 12px;
   }
-  .teams-branch-symbol {
-    width: 32px;
-    height: 32px;
-    font-size: 19px;
+  .teams-person-mobile {
+    gap: 8px;
   }
-  .teams-branch-head h2 {
-    font-size: 15px;
-  }
-  .teams-branch-head .teams-overline,
-  .teams-branch .teams-section-label {
-    font-size: 10px;
-  }
-  .teams-branch-body {
-    padding: 10px 8px;
-  }
-  .teams-branch .teams-person {
-    flex-direction: column;
-    align-items: stretch;
-    padding: 8px;
-    text-align: center;
-  }
-  .teams-branch .teams-person-info strong {
+  .teams-person-mobile .teams-person-info strong {
     font-size: 13px;
-  }
-  .teams-branch .teams-role {
-    font-size: 9px;
-  }
-  .teams-branch .teams-person-actions {
-    align-self: center;
-    justify-content: center;
-    flex-wrap: wrap;
-    margin-inline-start: 0;
-  }
-  .teams-count {
-    margin-inline-start: 0;
-    padding: 5px 8px;
-    font-size: 10px;
-  }
-  .teams-edit-team {
-    width: 100%;
-    font-size: 10px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
   .teams-branch,
-  .teams-skeleton {
+  .teams-skeleton,
+  .teams-mobile-panel {
     animation: none;
   }
   .teams-person {

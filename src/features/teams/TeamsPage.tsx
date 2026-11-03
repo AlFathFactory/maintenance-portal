@@ -3,95 +3,45 @@ import { env } from '../../config/env';
 import { useAuth } from '../auth/AuthProvider';
 import { ErrorMessage } from '../../shared/ui/ErrorMessage';
 import { TeamDialogs, type TeamDialog } from './TeamDialogs';
-import { CallButton } from './CallButton';
+import { StaffRow } from './StaffRow';
+import { TeamTabs } from './TeamTabs';
 import { useTeamDirectory } from './queries';
 import type { Staff, Team, TeamDirectory } from './types';
 
-function PersonCard({
-  staff,
-  role,
-  directory,
-  admin,
-  onAction,
-}: {
-  staff: Staff;
-  role?: string;
-  directory: TeamDirectory;
-  admin: boolean;
-  onAction(dialog: TeamDialog): void;
-}) {
-  const phone = directory.contacts.find((contact) => contact.staff_id === staff.id)?.phone;
-  const protectedStaff = directory.teams.some(
-    (team) => team.engineer_id === staff.id || team.leader_id === staff.id,
-  );
-  return (
-    <article className="teams-person">
-      <div className="teams-person-info">
-        <strong>{staff.full_name}</strong>
-        {role && <span className="teams-role">{role}</span>}
-      </div>
-      {(phone || admin) && (
-        <div className="teams-person-actions">
-          <CallButton name={staff.full_name} phone={phone} />
-          {admin && (
-            <button
-              type="button"
-              className="teams-icon-button"
-              onClick={() => onAction({ kind: 'staff', staff })}
-              aria-label={`تعديل ${staff.full_name}`}
-              title="تعديل"
-            >
-              ✎
-            </button>
-          )}
-          {admin && !protectedStaff && staff.role !== 'engineer' && (
-            <button
-              type="button"
-              className="teams-icon-button"
-              onClick={() => onAction({ kind: 'assign', staff })}
-              aria-label={`توزيع ${staff.full_name}`}
-              title="توزيع الفريق"
-            >
-              ↔
-            </button>
-          )}
-          {admin && !protectedStaff && (
-            <button
-              type="button"
-              className="teams-icon-button teams-icon-danger"
-              onClick={() => onAction({ kind: 'delete', staff })}
-              aria-label={`حذف ${staff.full_name}`}
-              title="حذف"
-            >
-              ×
-            </button>
-          )}
-        </div>
-      )}
-    </article>
-  );
+interface TeamView {
+  team: Team;
+  leader: Staff | undefined;
+  members: Staff[];
+}
+
+function teamViews(directory: TeamDirectory): TeamView[] {
+  const staff = new Map(directory.staff.map((person) => [person.id, person]));
+  return directory.teams.map((team) => ({
+    team,
+    leader: staff.get(team.leader_id),
+    members: directory.members
+      .filter(
+        (membership) => membership.team_id === team.id && membership.staff_id !== team.leader_id,
+      )
+      .map((membership) => staff.get(membership.staff_id))
+      .filter((person): person is Staff => Boolean(person)),
+  }));
 }
 
 function TeamBranch({
-  team,
+  view,
   directory,
   admin,
   onAction,
   index,
 }: {
-  team: Team;
+  view: TeamView;
   directory: TeamDirectory;
   admin: boolean;
   onAction(dialog: TeamDialog): void;
   index: number;
 }) {
-  const leader = directory.staff.find((staff) => staff.id === team.leader_id);
-  const members = directory.members
-    .filter(
-      (membership) => membership.team_id === team.id && membership.staff_id !== team.leader_id,
-    )
-    .map((membership) => directory.staff.find((staff) => staff.id === membership.staff_id))
-    .filter((staff): staff is Staff => Boolean(staff));
+  const { team, leader, members } = view;
   return (
     <section className={`teams-branch teams-branch-${index % 2}`} aria-label={`فريق ${team.name}`}>
       <div className="teams-branch-head">
@@ -116,9 +66,9 @@ function TeamBranch({
       <div className="teams-branch-body">
         <div className="teams-section-label">مشرف</div>
         {leader ? (
-          <PersonCard
+          <StaffRow
             staff={leader}
-            // role="قائد الفريق"
+            kind="leader"
             directory={directory}
             admin={admin}
             onAction={onAction}
@@ -133,9 +83,10 @@ function TeamBranch({
         <div className="teams-members">
           {members.length ? (
             members.map((staff) => (
-              <PersonCard
+              <StaffRow
                 key={staff.id}
                 staff={staff}
+                kind="technician"
                 role="فني صيانة"
                 directory={directory}
                 admin={admin}
@@ -155,7 +106,10 @@ export function TeamsPage() {
   const { isAdmin, loading: authLoading } = useAuth();
   const directoryQuery = useTeamDirectory();
   const [dialog, setDialog] = useState<TeamDialog | null>(null);
+  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   const directory = directoryQuery.data;
+  const views = directory ? teamViews(directory) : [];
+  const selectedView = views.find((view) => view.team.id === selectedTeamId) ?? views[0];
   const engineerIds = new Set(directory?.teams.map((team) => team.engineer_id) ?? []);
   const engineers = directory?.staff.filter((staff) => engineerIds.has(staff.id)) ?? [];
   const assigned = new Set([
@@ -202,9 +156,10 @@ export function TeamsPage() {
             <div className="teams-engineers">
               <span className="teams-overline">مهندس الصيانة</span>
               {engineers.map((staff) => (
-                <PersonCard
+                <StaffRow
                   key={staff.id}
                   staff={staff}
+                  kind="engineer"
                   directory={directory}
                   admin={canManage}
                   onAction={setDialog}
@@ -213,10 +168,10 @@ export function TeamsPage() {
               {!engineers.length && <p className="teams-placeholder">لم يُعيَّن مهندس صيانة.</p>}
             </div>
             <div className="teams-branches">
-              {directory.teams.map((team, index) => (
+              {views.map((view, index) => (
                 <TeamBranch
-                  key={team.id}
-                  team={team}
+                  key={view.team.id}
+                  view={view}
                   directory={directory}
                   admin={canManage}
                   onAction={setDialog}
@@ -224,6 +179,91 @@ export function TeamsPage() {
                 />
               ))}
             </div>
+          </div>
+          <div className="teams-mobile-directory">
+            <div className="teams-mobile-hero">
+              <span className="teams-overline">مهندس الصيانة</span>
+              {engineers.map((staff) => (
+                <StaffRow
+                  key={staff.id}
+                  staff={staff}
+                  kind="engineer"
+                  role="الإشراف على الفرق"
+                  directory={directory}
+                  admin={canManage}
+                  mobile
+                  onAction={setDialog}
+                />
+              ))}
+              {!engineers.length && <p className="teams-placeholder">لم يُعيَّن مهندس صيانة.</p>}
+            </div>
+            <TeamTabs
+              teams={views.map((view) => ({
+                id: view.team.id,
+                name: view.team.name,
+                count: view.members.length,
+              }))}
+              selectedId={selectedView.team.id}
+              onSelect={setSelectedTeamId}
+            />
+            <section
+              key={selectedView.team.id}
+              className="teams-mobile-panel"
+              role="tabpanel"
+              id="teams-mobile-panel"
+              aria-labelledby={`team-tab-${selectedView.team.id}`}
+            >
+              <div className="teams-mobile-panel-head">
+                <div>
+                  <span>فريق الصيانة</span>
+                  <h2>{selectedView.team.name}</h2>
+                </div>
+                {canManage && (
+                  <button
+                    type="button"
+                    className="teams-mobile-team-edit"
+                    onClick={() => setDialog({ kind: 'team', team: selectedView.team })}
+                  >
+                    إدارة الفريق
+                  </button>
+                )}
+              </div>
+              <div className="teams-mobile-list">
+                <p className="teams-mobile-section-label">مشرف الفريق</p>
+                {selectedView.leader ? (
+                  <StaffRow
+                    staff={selectedView.leader}
+                    kind="leader"
+                    role="مشرف الفريق"
+                    directory={directory}
+                    admin={canManage}
+                    mobile
+                    onAction={setDialog}
+                  />
+                ) : (
+                  <p className="teams-placeholder">لم يُعيَّن مشرف لهذا الفريق.</p>
+                )}
+                <p className="teams-mobile-section-label">
+                  الفنيون <span>{selectedView.members.length}</span>
+                </p>
+                {selectedView.members.length ? (
+                  selectedView.members.map((staff) => (
+                    <StaffRow
+                      key={staff.id}
+                      staff={staff}
+                      kind="technician"
+                      role="فني صيانة"
+                      directory={directory}
+                      admin={canManage}
+                      mobile
+                      onAction={setDialog}
+                    />
+                  ))
+                ) : (
+                  <p className="teams-placeholder">لا يوجد فنيون في هذا الفريق بعد.</p>
+                )}
+              </div>
+            </section>
           </div>
           {canManage && (
             <section className="teams-unassigned">
@@ -236,9 +276,10 @@ export function TeamsPage() {
               {unassigned.length ? (
                 <div className="teams-unassigned-grid">
                   {unassigned.map((staff) => (
-                    <PersonCard
+                    <StaffRow
                       key={staff.id}
                       staff={staff}
+                      kind={staff.role === 'engineer' ? 'engineer' : 'technician'}
                       role={staff.role === 'engineer' ? 'مهندس · دون فريق' : 'فني · دون فريق'}
                       directory={directory}
                       admin
