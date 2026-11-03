@@ -3,19 +3,8 @@ import { CallButton } from './CallButton';
 import type { TeamDialog } from './TeamDialogs';
 import type { Staff, TeamDirectory } from './types';
 
-type StaffKind = 'engineer' | 'leader' | 'technician';
-
-// function RoleIcon({ kind }: { kind: StaffKind }) {
-//   return (
-//     <span className={`teams-role-icon teams-role-icon-${kind}`} aria-hidden="true">
-//       {kind === 'engineer' ? '✦' : kind === 'leader' ? '◆' : '⚙'}
-//     </span>
-//   );
-// }
-
 export function StaffRow({
   staff,
-  // kind,
   role,
   directory,
   admin,
@@ -23,7 +12,6 @@ export function StaffRow({
   onAction,
 }: {
   staff: Staff;
-  kind: StaffKind;
   role?: string;
   directory: TeamDirectory;
   admin: boolean;
@@ -44,25 +32,26 @@ export function StaffRow({
 
   return (
     <article className={`teams-person${mobile ? ' teams-person-mobile' : ''}`}>
-      {/* {mobile && <RoleIcon kind={kind} />} */}
       <div className="teams-person-info">
-        <div className="teams-person-name">
-          <strong>{staff.full_name}</strong>
-          {mobile && <CallButton name={staff.full_name} phone={phone} />}
-        </div>
+        <strong>{staff.full_name}</strong>
         {role && <span className="teams-role">{role}</span>}
       </div>
       {mobile ? (
-        admin && (
-          <button
-            type="button"
-            className="teams-menu-trigger"
-            aria-label={`إجراءات ${staff.full_name}`}
-            aria-expanded={menuOpen}
-            onClick={() => setMenuOpen((open) => !open)}
-          >
-            ⋯
-          </button>
+        (phone || admin) && (
+          <div className="teams-person-mobile-controls">
+            {admin && (
+              <button
+                type="button"
+                className="teams-menu-trigger"
+                aria-label={`إجراءات ${staff.full_name}`}
+                aria-expanded={menuOpen}
+                onClick={() => setMenuOpen((open) => !open)}
+              >
+                ⋯
+              </button>
+            )}
+            <CallButton name={staff.full_name} phone={phone} />
+          </div>
         )
       ) : (
         <div className="teams-person-actions">

@@ -66,13 +66,7 @@ function TeamBranch({
       <div className="teams-branch-body">
         <div className="teams-section-label">مشرف</div>
         {leader ? (
-          <StaffRow
-            staff={leader}
-            kind="leader"
-            directory={directory}
-            admin={admin}
-            onAction={onAction}
-          />
+          <StaffRow staff={leader} directory={directory} admin={admin} onAction={onAction} />
         ) : (
           <p className="teams-placeholder">لم يُعيَّن قائد لهذا الفريق.</p>
         )}
@@ -86,7 +80,6 @@ function TeamBranch({
               <StaffRow
                 key={staff.id}
                 staff={staff}
-                kind="technician"
                 role="فني صيانة"
                 directory={directory}
                 admin={admin}
@@ -159,7 +152,6 @@ export function TeamsPage() {
                 <StaffRow
                   key={staff.id}
                   staff={staff}
-                  kind="engineer"
                   directory={directory}
                   admin={canManage}
                   onAction={setDialog}
@@ -187,7 +179,6 @@ export function TeamsPage() {
                 <StaffRow
                   key={staff.id}
                   staff={staff}
-                  kind="engineer"
                   // role="الإشراف على الفرق"
                   directory={directory}
                   admin={canManage}
@@ -233,7 +224,6 @@ export function TeamsPage() {
                 {selectedView.leader ? (
                   <StaffRow
                     staff={selectedView.leader}
-                    kind="leader"
                     role="مشرف الفريق"
                     directory={directory}
                     admin={canManage}
@@ -251,7 +241,6 @@ export function TeamsPage() {
                     <StaffRow
                       key={staff.id}
                       staff={staff}
-                      kind="technician"
                       role="فني صيانة"
                       directory={directory}
                       admin={canManage}
@@ -279,7 +268,6 @@ export function TeamsPage() {
                     <StaffRow
                       key={staff.id}
                       staff={staff}
-                      kind={staff.role === 'engineer' ? 'engineer' : 'technician'}
                       role={staff.role === 'engineer' ? 'مهندس · دون فريق' : 'فني · دون فريق'}
                       directory={directory}
                       admin
