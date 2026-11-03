@@ -66,7 +66,9 @@ maintenance-portal/
     │       ├── maintenance.css        # History empty state and timeline
     │       └── queries.ts            # Maintenance React Query hooks/mutations
     │   └── teams/
-    │       ├── TeamsPage.tsx          # Public chart and admin entry points
+    │       ├── TeamsPage.tsx          # Desktop tree and mobile directory from one team view
+    │       ├── StaffRow.tsx           # Person row and responsive admin actions
+    │       ├── TeamTabs.tsx           # Mobile team selection with dynamic counts
     │       ├── CallButton.tsx         # Reusable public tel link with validation
     │       ├── TeamDialogs.tsx        # Admin forms and delete confirmation
     │       ├── queries.ts            # Team query keys and mutations
@@ -132,6 +134,7 @@ Supabase INSERT into maintenance_records
 - **Create maintenance:** `MaintenanceForm → useCreateMaintenance → repository.createMaintenance → maintenance_records`; successful mutation invalidates `['maintenance', equipmentId]` and `['equipment']`; the database trigger updates the equipment summary.
 - **Admin access:** `AuthProvider` receives Supabase Auth session, then checks `maintenance_admins` for the current user; `useAuth().isAdmin` controls frontend action visibility. **RLS is the actual security boundary.**
 - **Team directory:** `TeamsPage → useTeamDirectory() → repository.listTeamDirectory` reads staff, teams, memberships and public contact numbers. `CallButton` shows a validated `tel:` link when a number exists. Team query caches are cleared on sign-out; contact writes remain admin-only.
+- **Responsive team UI:** `TeamsPage` builds each team's leader and members once from the directory. Desktop shows the engineer and both branches as a tree. At 768px and below, `TeamTabs` selects one team and `StaffRow` renders compact rows with call links beside names. Admin actions expand from each row without changing the repository or authorization flow.
 - **Team administration:** `TeamDialogs → useTeamActions → repository` handles staff, assignments and team updates. Membership transfers use one row update. Staff create and delete use compensating cleanup when a dependent request fails; these browser requests are not a database transaction.
 
 ## 4. Reuse before creating anything new

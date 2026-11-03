@@ -37,6 +37,10 @@ export function StaffRow({
   );
   const canAssign = !protectedStaff && staff.role !== 'engineer';
   const canDelete = !protectedStaff;
+  const openDialog = (dialog: TeamDialog) => {
+    setMenuOpen(false);
+    onAction(dialog);
+  };
 
   return (
     <article className={`teams-person${mobile ? ' teams-person-mobile' : ''}`}>
@@ -100,11 +104,11 @@ export function StaffRow({
       )}
       {mobile && menuOpen && admin && (
         <div className="teams-mobile-actions">
-          <button type="button" onClick={() => onAction({ kind: 'staff', staff })}>
+          <button type="button" onClick={() => openDialog({ kind: 'staff', staff })}>
             تعديل البيانات
           </button>
           {canAssign && (
-            <button type="button" onClick={() => onAction({ kind: 'assign', staff })}>
+            <button type="button" onClick={() => openDialog({ kind: 'assign', staff })}>
               نقل بين الفرق
             </button>
           )}
@@ -112,7 +116,7 @@ export function StaffRow({
             <button
               type="button"
               className="teams-mobile-delete"
-              onClick={() => onAction({ kind: 'delete', staff })}
+              onClick={() => openDialog({ kind: 'delete', staff })}
             >
               حذف الموظف
             </button>

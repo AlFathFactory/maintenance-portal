@@ -643,6 +643,20 @@
   .teams-unassigned-grid {
     grid-template-columns: 1fr;
   }
+  .teams-unassigned .teams-person {
+    flex-wrap: wrap;
+  }
+  .teams-unassigned .teams-person-actions {
+    flex-wrap: wrap;
+  }
+  .teams-unassigned .teams-icon-button,
+  .teams-unassigned .teams-call,
+  .teams-page .modal button,
+  .teams-page .modal input,
+  .teams-page .modal select {
+    min-width: 44px;
+    min-height: 44px;
+  }
 }
 @media (max-width: 530px) {
   .teams-page-header {
