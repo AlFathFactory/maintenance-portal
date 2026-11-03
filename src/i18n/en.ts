@@ -66,6 +66,12 @@ export const en = {
     emptyHint: 'Try another search or change the filter.',
     lastMaintenance: 'Last maintenance',
   },
+  qrBulk: {
+    download: 'Download all QR codes',
+    progress: 'Preparing {{done}} of {{total}}...',
+    complete: 'Prepared {{count}} QR codes in one archive.',
+    failed: 'Some QR codes could not be prepared. No incomplete archive was downloaded; try again.',
+  },
   equipmentType: { machine: 'Machine', crane: 'Crane' },
   status: {
     unknown: 'Unknown',

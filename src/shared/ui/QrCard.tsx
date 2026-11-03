@@ -1,13 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import QRCode from 'qrcode';
 import type { Equipment } from '../../domain/equipment';
 import { equipmentText } from '../../domain/localizedEquipment';
 import { useEquipmentQrToken, isQrToken } from '../../features/equipment/qrQueries';
+import { renderEquipmentQr } from '../../features/equipment/qrImage';
 import { ErrorMessage } from './ErrorMessage';
-
-const QR_SIZE = 1200;
-const LABEL_HEIGHT = 200;
 
 export function QrCard({ equipment }: { equipment: Equipment }) {
   const { t, i18n } = useTranslation();
@@ -25,29 +22,15 @@ export function QrCard({ equipment }: { equipment: Equipment }) {
     let active = true;
     setReady(false);
     setCanvasError(false);
-    const address = `${window.location.origin}${window.location.pathname}#/qr/${encodeURIComponent(token)}`;
-    const qrCanvas = document.createElement('canvas');
-    void QRCode.toCanvas(qrCanvas, address, {
-      width: QR_SIZE,
-      margin: 4,
-      errorCorrectionLevel: 'M',
-      color: { dark: '#000000', light: '#ffffff' },
+    void renderEquipmentQr(canvas, {
+      token,
+      name: equipmentText(equipment, 'name', language),
+      code: equipment.code || equipment.slug,
+      line1: t('qr.canvasLine1'),
+      line2: t('qr.canvasLine2'),
     })
       .then(() => {
         if (!active) return;
-        const context = canvas.getContext('2d');
-        if (!context) throw new Error('Canvas is unavailable');
-        canvas.width = QR_SIZE;
-        canvas.height = QR_SIZE + LABEL_HEIGHT;
-        context.fillStyle = '#ffffff';
-        context.fillRect(0, 0, canvas.width, canvas.height);
-        context.fillStyle = '#000000';
-        context.font = 'bold 58px Cairo, Arial, sans-serif';
-        context.textAlign = 'center';
-        context.fillText(t('qr.canvasLine1'), canvas.width / 2, 72);
-        context.font = '44px Cairo, Arial, sans-serif';
-        context.fillText(t('qr.canvasLine2'), canvas.width / 2, 140);
-        context.drawImage(qrCanvas, 0, LABEL_HEIGHT);
         setReady(true);
       })
       .catch(() => {
@@ -56,7 +39,7 @@ export function QrCard({ equipment }: { equipment: Equipment }) {
     return () => {
       active = false;
     };
-  }, [token, language, t]);
+  }, [token, language, t, equipment]);
 
   function download() {
     const canvas = canvasRef.current;

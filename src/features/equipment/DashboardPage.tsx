@@ -11,6 +11,7 @@ import { ErrorMessage } from '../../shared/ui/ErrorMessage';
 import { formatDate } from '../../shared/date';
 import { useEquipmentList } from './queries';
 import { EquipmentForm } from './EquipmentForm';
+import { BulkQrDownloadButton } from './BulkQrDownloadButton';
 
 type Filter = EquipmentType | 'out_of_service' | 'maintenance' | 'all';
 
@@ -147,9 +148,12 @@ export function DashboardPage() {
         </div>
         <div className="intro-actions">
           {isAdmin && (
-            <button className="primary-button" onClick={() => setFormOpen(true)}>
-              <span>＋</span> {t('dashboard.addEquipment')}
-            </button>
+            <>
+              <BulkQrDownloadButton equipment={items} />
+              <button className="primary-button" onClick={() => setFormOpen(true)}>
+                <span>＋</span> {t('dashboard.addEquipment')}
+              </button>
+            </>
           )}
         </div>
       </section>

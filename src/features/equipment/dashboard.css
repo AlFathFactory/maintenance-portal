@@ -25,6 +25,23 @@
   color: #899b9e;
   font-size: 12px;
 }
+.intro-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.qr-bulk-action {
+  display: grid;
+  gap: 4px;
+}
+.qr-bulk-action .outline-button {
+  min-height: 44px;
+}
+.qr-bulk-error {
+  color: #a4473e;
+  font-size: 11px;
+}
 .stats {
   display: grid;
   grid-template-columns: repeat(4, 1fr);

@@ -65,6 +65,12 @@ export const ar = {
     emptyHint: 'جرّب كلمة بحث مختلفة أو غيّر تصفية المعدات.',
     lastMaintenance: 'آخر صيانة',
   },
+  qrBulk: {
+    download: 'تحميل كل رموز QR',
+    progress: 'جارٍ تجهيز {{done}} من {{total}}...',
+    complete: 'تم تجهيز {{count}} رمز QR في ملف واحد.',
+    failed: 'تعذر تجهيز بعض الرموز. لم يتم تنزيل ملف ناقص؛ حاول مرة أخرى.',
+  },
   equipmentType: { machine: 'ماكينة', crane: 'ونش' },
   status: {
     unknown: 'غير محددة',

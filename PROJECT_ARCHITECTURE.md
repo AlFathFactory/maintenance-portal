@@ -8,7 +8,7 @@
 
 Arabic/English factory maintenance portal. Arabic is the default RTL language; English uses LTR. Visitors with a valid QR token see only its equipment profile and maintenance history; the team directory remains public. Authenticated **maintenance admins** access the full dashboard, manage equipment, rotate QR tokens, change statuses and record maintenance. The codebase contains both a live Supabase repository and a browser-local demo implementation.
 
-**Stack:** React 19, TypeScript, Vite, React Router 7 (`HashRouter`), TanStack React Query 5, `@supabase/supabase-js` 2, `i18next`, `react-i18next`, `qrcode`, plain CSS.
+**Stack:** React 19, TypeScript, Vite, React Router 7 (`HashRouter`), TanStack React Query 5, `@supabase/supabase-js` 2, `i18next`, `react-i18next`, `qrcode`, `jszip`, plain CSS.
 
 ## 2. Complete tracked file structure
 
@@ -69,6 +69,8 @@ maintenance-portal/
     │   │   ├── PublicQrPage.tsx # Isolated single-equipment QR profile
     │   │   ├── QrSettingsPage.tsx # Admin-only QR rotation with typed confirmation
     │   │   ├── qrSettings.css  # QR settings layout
+    │   │   ├── qrImage.ts       # Shared high-resolution QR image renderer
+    │   │   ├── BulkQrDownloadButton.tsx # Admin ZIP export of all equipment QR images
     │   │   ├── qrQueries.ts     # Token-scoped public/admin RPC hooks
     │   │   ├── publicQr.css    # QR profile and access screen styles
     │   │   ├── EquipmentForm.tsx# Add/edit equipment
@@ -148,7 +150,8 @@ Supabase INSERT into maintenance_records
 - **Admin equipment detail:** `/equipment/:slug → RequireAdmin → useEquipment(slug) → repository.getEquipment(slug)`. Visitors never mount this query, and RLS denies direct equipment-table reads.
 - **Public QR profile:** `/qr/:token → useQrEquipment(token) → repository.getEquipmentByQr → get_equipment_by_qr` returns one equipment, translations, and maintenance history. It has no shell or unrelated links/queries. Invalid tokens show an invalid/expired state.
 - **Legacy QR links:** anonymous visits to `/equipment/:slug` show a localized outdated-QR notice with instructions to get a newly printed code; no equipment query mounts. Existing slug links cannot grant public access under the current RLS policy.
-- **Admin QR card:** `QrCard → useEquipmentQrToken → get_equipment_qr_token`; the QR encodes `origin/path#/qr/<token>`. The canvas is rendered at 1200 px with a four-module quiet zone for high-resolution PNG download and larger printing. Tokens stay in memory only.
+- **Admin QR card:** `QrCard → useEquipmentQrToken → get_equipment_qr_token`; the QR encodes `origin/path#/qr/<token>`. `qrImage.ts` renders the 1200 px QR with a four-module quiet zone, equipment name and code for PNG download and larger printing. Tokens stay in memory only.
+- **Bulk QR export:** The admin dashboard button uses the same renderer and existing token RPC to create one ZIP with `Machines/` and `Cranes/` folders. It processes three equipment at a time, reports progress, and downloads only after every image succeeds. Export never rotates tokens.
 - **QR settings:** `/settings` is admin-only. It selects one equipment and requires typing its slug in a confirmation modal before `rotate_equipment_qr_token` runs. Rotation is absent from the equipment card because it immediately invalidates existing printed labels.
 - **Add/edit equipment:** `EquipmentForm → useEquipmentActions().create/update → repository.createEquipment/updateEquipment → equipment`; successful mutation invalidates all `['equipment']` queries.
 - **Localization:** `src/i18n` initializes Arabic by default, persists AR/EN in `localStorage`, and updates `<html lang>`/`dir`. `AppShell` provides the language switcher. React components use `useTranslation`; `formatDate` follows the current language.
