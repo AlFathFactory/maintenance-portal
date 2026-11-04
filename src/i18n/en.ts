@@ -102,6 +102,7 @@ export const en = {
     changeStatus: 'Change status',
     details: 'Equipment details',
     detailsHint: 'Reference information from the equipment register.',
+    developerCredit: 'System developed by Eng. Abdelrahman Osama',
     history: 'Maintenance history',
     historyHint: 'All recorded maintenance for this equipment.',
     historyLoading: 'Loading maintenance history...',

@@ -56,6 +56,12 @@
   display: grid;
   gap: 18px;
 }
+.detail-credit {
+  margin: 0;
+  color: #7c9396;
+  font-size: 12px;
+  text-align: center;
+}
 .panel-heading {
   display: flex;
   justify-content: space-between;

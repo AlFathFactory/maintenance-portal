@@ -83,6 +83,7 @@ export function EquipmentPage() {
             </div>
             <EquipmentFields item={item} />
           </section>
+          <p className="detail-credit">{t('equipment.developerCredit')}</p>
           <section className="panel history-panel">
             <div className="panel-heading">
               <div>

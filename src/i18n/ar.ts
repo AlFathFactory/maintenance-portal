@@ -101,6 +101,7 @@ export const ar = {
     changeStatus: 'تغيير الحالة',
     details: 'بيانات المعدة',
     detailsHint: 'المعلومات الثابتة الواردة في سجل المعدات.',
+    developerCredit: 'تم تطوير النظام بواسطة م/عبدالرحمن أسامة',
     history: 'سجل الصيانة',
     historyHint: 'كل عمليات الصيانة المسجلة لهذه المعدة.',
     historyLoading: 'جارٍ تحميل سجل الصيانة...',
