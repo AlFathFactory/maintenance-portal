@@ -3,6 +3,21 @@
   display: grid;
   grid-template-columns: 252px minmax(0, 1fr);
 }
+.visitor-teams-shell {
+  display: block;
+}
+.visitor-teams-shell .mobile-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+.visitor-teams-shell .mobile-brand .brand-mark {
+  height: 30px;
+  width: 30px;
+  font-size: 21px;
+  border-radius: 8px;
+}
 .language-switch {
   display: inline-flex;
   direction: ltr;

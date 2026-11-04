@@ -26,49 +26,56 @@ export function AppShell() {
   }
 
   return (
-    <div className="app-shell">
-      <aside className="sidebar">
-        <Link to="/" className="brand">
-          <div className="brand-mark">M</div>
-          <div>
-            <strong>{t('shell.factory')}</strong>
-            <small>{t('shell.department')}</small>
-          </div>
-        </Link>
-        <div className="side-label">{t('shell.menu')}</div>
-        <nav aria-label={t('shell.menu')}>
-          <NavLink to="/" end className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-            ▦ <span>{t('shell.dashboard')}</span>
-          </NavLink>
-          <Link className="nav-item" to="/?type=machine">
-            ▤ <span>{t('shell.machines')}</span>
+    <div className={`app-shell${teamsPage && !isAdmin ? ' visitor-teams-shell' : ''}`}>
+      {isAdmin && (
+        <aside className="sidebar">
+          <Link to="/" className="brand">
+            <div className="brand-mark">M</div>
+            <div>
+              <strong>{t('shell.factory')}</strong>
+              <small>{t('shell.department')}</small>
+            </div>
           </Link>
-          <Link className="nav-item" to="/?type=crane">
-            ♜ <span>{t('shell.cranes')}</span>
-          </Link>
-          <NavLink to="/teams" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-            ♧ <span>{t('shell.teams')}</span>
-          </NavLink>
-          {isAdmin && (
+          <div className="side-label">{t('shell.menu')}</div>
+          <nav aria-label={t('shell.menu')}>
+            <NavLink
+              to="/"
+              end
+              className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+            >
+              ▦ <span>{t('shell.dashboard')}</span>
+            </NavLink>
+            <Link className="nav-item" to="/?type=machine">
+              ▤ <span>{t('shell.machines')}</span>
+            </Link>
+            <Link className="nav-item" to="/?type=crane">
+              ♜ <span>{t('shell.cranes')}</span>
+            </Link>
+            <NavLink
+              to="/teams"
+              className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+            >
+              ♧ <span>{t('shell.teams')}</span>
+            </NavLink>
             <NavLink
               to="/settings"
               className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
             >
               ⚙ <span>{t('shell.settings')}</span>
             </NavLink>
-          )}
-        </nav>
-        <div className="sidebar-bottom">
-          <div className="sidebar-note">
-            <span className="note-icon">▣</span>
-            <strong>{t('shell.equipmentProfile')}</strong>
-            <p>{t('shell.qrNote')}</p>
+          </nav>
+          <div className="sidebar-bottom">
+            <div className="sidebar-note">
+              <span className="note-icon">▣</span>
+              <strong>{t('shell.equipmentProfile')}</strong>
+              <p>{t('shell.qrNote')}</p>
+            </div>
+            <div className="side-foot">
+              MAINTENANCE SYSTEM <span>2026</span>
+            </div>
           </div>
-          <div className="side-foot">
-            MAINTENANCE SYSTEM <span>2026</span>
-          </div>
-        </div>
-      </aside>
+        </aside>
+      )}
       <div className="main-wrap">
         <header className="topbar">
           <div className="mobile-brand">
@@ -113,19 +120,19 @@ export function AppShell() {
             )}
           </div>
         </header>
-        <nav className="mobile-nav" aria-label={t('shell.menu')}>
-          <NavLink to="/" end className={({ isActive }) => (isActive ? 'active' : '')}>
-            {t('shell.mobileEquipment')}
-          </NavLink>
-          <NavLink to="/teams" className={({ isActive }) => (isActive ? 'active' : '')}>
-            {t('shell.teams')}
-          </NavLink>
-          {isAdmin && (
+        {isAdmin && (
+          <nav className="mobile-nav" aria-label={t('shell.menu')}>
+            <NavLink to="/" end className={({ isActive }) => (isActive ? 'active' : '')}>
+              {t('shell.mobileEquipment')}
+            </NavLink>
+            <NavLink to="/teams" className={({ isActive }) => (isActive ? 'active' : '')}>
+              {t('shell.teams')}
+            </NavLink>
             <NavLink to="/settings" className={({ isActive }) => (isActive ? 'active' : '')}>
               {t('shell.settings')}
             </NavLink>
-          )}
-        </nav>
+          </nav>
+        )}
         <main>
           {error && (
             <div className="error-banner" role="alert">
