@@ -24,8 +24,6 @@ export function QrCard({ equipment }: { equipment: Equipment }) {
     setCanvasError(false);
     void renderEquipmentQr(canvas, {
       token,
-      name: equipmentText(equipment, 'name', language),
-      code: equipment.code || equipment.slug,
       line1: t('qr.canvasLine1'),
       line2: t('qr.canvasLine2'),
     })

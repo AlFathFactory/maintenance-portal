@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Equipment } from '../../domain/equipment';
-import { equipmentText } from '../../domain/localizedEquipment';
 import { repository } from '../../services';
 import { useToast } from '../../shared/ui/ToastProvider';
 import { isQrToken } from './qrQueries';
@@ -12,12 +11,11 @@ function safeFileName(value: string): string {
 }
 
 export function BulkQrDownloadButton({ equipment }: { equipment: Equipment[] }) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const toast = useToast();
   const [done, setDone] = useState(0);
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState(false);
-  const language = i18n.language === 'en' ? 'en' : 'ar';
 
   async function downloadAll() {
     if (downloading || equipment.length === 0) return;
@@ -43,8 +41,6 @@ export function BulkQrDownloadButton({ equipment }: { equipment: Equipment[] }) 
               const canvas = document.createElement('canvas');
               await renderEquipmentQr(canvas, {
                 token,
-                name: equipmentText(item, 'name', language),
-                code: item.code || item.slug,
                 line1: t('qr.canvasLine1'),
                 line2: t('qr.canvasLine2'),
               });

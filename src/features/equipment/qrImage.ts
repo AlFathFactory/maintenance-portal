@@ -3,12 +3,9 @@ import { isQrToken } from './qrQueries';
 
 const QR_SIZE = 1200;
 const HEADER_HEIGHT = 200;
-const FOOTER_HEIGHT = 190;
 
 interface QrImageDetails {
   token: string;
-  name: string;
-  code: string;
   line1: string;
   line2: string;
 }
@@ -27,7 +24,7 @@ export async function renderEquipmentQr(canvas: HTMLCanvasElement, details: QrIm
     color: { dark: '#000000', light: '#ffffff' },
   });
   canvas.width = QR_SIZE;
-  canvas.height = HEADER_HEIGHT + QR_SIZE + FOOTER_HEIGHT;
+  canvas.height = HEADER_HEIGHT + QR_SIZE;
   const context = canvas.getContext('2d');
   if (!context) throw new Error('Canvas is unavailable');
   context.fillStyle = '#ffffff';
@@ -39,10 +36,6 @@ export async function renderEquipmentQr(canvas: HTMLCanvasElement, details: QrIm
   context.font = '44px Cairo, Arial, sans-serif';
   context.fillText(details.line2, QR_SIZE / 2, 140, QR_SIZE - 100);
   context.drawImage(qrCanvas, 0, HEADER_HEIGHT);
-  context.font = 'bold 60px Cairo, Arial, sans-serif';
-  context.fillText(details.name, QR_SIZE / 2, HEADER_HEIGHT + QR_SIZE + 80, QR_SIZE - 100);
-  context.font = '44px Arial, sans-serif';
-  context.fillText(details.code, QR_SIZE / 2, HEADER_HEIGHT + QR_SIZE + 145, QR_SIZE - 100);
 }
 
 export function qrCanvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
