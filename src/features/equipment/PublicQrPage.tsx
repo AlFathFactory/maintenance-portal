@@ -71,6 +71,7 @@ export function PublicQrPage() {
               <p>{t('equipment.detailsHint')}</p>
               <EquipmentFields item={details.equipment} />
             </section>
+            <p className="public-qr-credit">{t('equipment.developerCredit')}</p>
             <section className="public-qr-panel">
               <h2>{t('equipment.history')}</h2>
               <p>{t('equipment.historyHint')}</p>
