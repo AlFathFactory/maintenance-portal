@@ -22,7 +22,7 @@ export function RequireHSE({ allowedRoles }: { allowedRoles?: readonly HSERole[]
       state={{
         from: location.pathname + location.search,
         department: 'hse',
-        insufficientRole: Boolean(hseRole && allowedRoles && !allowedRoles.includes(hseRole)),
+        allowedRoles,
       }}
     />
   );

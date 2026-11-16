@@ -4,6 +4,7 @@ import { Link, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from './AuthProvider';
 import { LoginModal } from './LoginModal';
 import { LanguageSwitcher } from '../../shared/ui/LanguageSwitcher';
+import type { HSERole } from './hseMembership';
 
 export function AccessDeniedPage() {
   const { t } = useTranslation();
@@ -14,12 +15,15 @@ export function AccessDeniedPage() {
     from?: string;
     legacyEquipmentLink?: boolean;
     department?: 'hse';
-    insufficientRole?: boolean;
+    allowedRoles?: readonly HSERole[];
   } | null;
   const from = routeState?.from;
   const legacyQrForVisitor = Boolean(routeState?.legacyEquipmentLink && !user);
   const safeFrom = from?.startsWith('/') && !from.startsWith('//') ? from : null;
-  const hseDestination = safeFrom?.startsWith('/hse') && !routeState?.insufficientRole;
+  const hseDestination =
+    safeFrom?.startsWith('/hse') &&
+    hseRole &&
+    (!routeState?.allowedRoles || routeState.allowedRoles.includes(hseRole));
   const maintenanceDestination =
     safeFrom === '/' ||
     safeFrom?.startsWith('/dashboard') ||
@@ -31,7 +35,7 @@ export function AccessDeniedPage() {
         {t('shell.checking')}
       </div>
     );
-  if (hseDestination && hseRole) return <Navigate to={safeFrom ?? '/hse'} replace />;
+  if (hseDestination) return <Navigate to={safeFrom ?? '/hse'} replace />;
   if (maintenanceDestination && isAdmin) return <Navigate to={safeFrom ?? '/'} replace />;
   if (!safeFrom && isAdmin) return <Navigate to="/" replace />;
   if ((!safeFrom || safeFrom === '/') && hseRole) return <Navigate to="/hse" replace />;
@@ -44,7 +48,10 @@ export function AccessDeniedPage() {
       ? 'access.verificationFailed'
       : hseAccess && hseInactive
         ? 'access.inactive'
-        : hseAccess && routeState?.insufficientRole
+        : hseAccess &&
+            hseRole &&
+            routeState?.allowedRoles &&
+            !routeState.allowedRoles.includes(hseRole)
           ? 'access.insufficient'
           : error && !hseAccess
             ? 'access.verificationFailed'

@@ -8,7 +8,14 @@ import { AppShell } from './AppShell';
 import { RequireAdmin } from '../features/auth/RequireAdmin';
 import { AccessDeniedPage } from '../features/auth/AccessDeniedPage';
 import { RequireHSE } from '../features/auth/RequireHSE';
-import { HSEHomePage } from '../features/auth/HSEHomePage';
+import { hsePages } from '../features/hse/navigation';
+
+const HSEShell = lazy(() => import('./HSEShell').then((module) => ({ default: module.HSEShell })));
+const HSEPlaceholderPage = lazy(() =>
+  import('../features/hse/HSEPlaceholderPage').then((module) => ({
+    default: module.HSEPlaceholderPage,
+  })),
+);
 
 const DashboardPage = lazy(() =>
   import('../features/equipment/DashboardPage').then((module) => ({
@@ -47,7 +54,33 @@ export function App() {
                 <Route path="qr/:token" element={<PublicQrPage />} />
                 <Route path="access-denied" element={<AccessDeniedPage />} />
                 <Route element={<RequireHSE />}>
-                  <Route path="hse" element={<HSEHomePage />} />
+                  <Route path="hse" element={<HSEShell />}>
+                    <Route index element={<HSEPlaceholderPage page={hsePages[0]} />} />
+                    {hsePages.slice(1).map((page) =>
+                      page.engineerOnly ? (
+                        <Route
+                          key={page.id}
+                          element={<RequireHSE allowedRoles={['hse_engineer']} />}
+                        >
+                          <Route path={page.path} element={<HSEPlaceholderPage page={page} />} />
+                        </Route>
+                      ) : (
+                        <Route
+                          key={page.id}
+                          path={page.path}
+                          element={<HSEPlaceholderPage page={page} />}
+                        />
+                      ),
+                    )}
+                    <Route
+                      path="*"
+                      element={
+                        <div className="not-found">
+                          <h1>{t('app.notFound')}</h1>
+                        </div>
+                      }
+                    />
+                  </Route>
                 </Route>
                 <Route element={<AppShell />}>
                   <Route path="teams" element={<TeamsPage />} />
