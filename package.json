@@ -9,7 +9,8 @@
     "build": "npm run typecheck && vite build",
     "preview": "vite preview --host 0.0.0.0",
     "format": "prettier --write src vite.config.ts scripts README.md",
-    "format:check": "prettier --check src vite.config.ts scripts README.md"
+    "format:check": "prettier --check src vite.config.ts scripts README.md",
+    "test:hse": "node --test scripts/test-hse.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.118.0",
@@ -27,6 +28,7 @@
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "prettier": "3.9.10",
+    "rolldown": "1.2.16",
     "typescript": "7.0.2",
     "vite": "8.3.5"
   },
