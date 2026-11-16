@@ -36,9 +36,12 @@ export interface ChainLineage {
   successors: Chain[];
 }
 export interface ChainListFilter {
-  status: ChainStatus;
+  status?: ChainStatus;
   tagNo?: string;
-  sortBy?: 'tag_no' | 'created_at' | 'start_working_date';
+  legs?: ChainLegCount;
+  scrappedFrom?: string;
+  scrappedTo?: string;
+  sortBy?: 'tag_no' | 'created_at' | 'start_working_date' | 'scrapping_date';
   ascending?: boolean;
   offset?: number;
   limit?: number;

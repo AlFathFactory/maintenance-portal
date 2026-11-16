@@ -28,6 +28,8 @@ import type {
 
 export interface HSERepository {
   listChains(filter: ChainListFilter): Promise<Chain[]>;
+  countChains(filter: Partial<ChainListFilter>): Promise<number>;
+  listChainReplacements(predecessorIds: string[]): Promise<Chain[]>;
   getChain(id: string): Promise<Chain | null>;
   createChain(input: ChainCreateInput): Promise<Chain>;
   updateChain(id: string, input: ChainUpdateInput): Promise<Chain>;

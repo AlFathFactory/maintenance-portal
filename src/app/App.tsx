@@ -16,6 +16,24 @@ const HSEPlaceholderPage = lazy(() =>
     default: module.HSEPlaceholderPage,
   })),
 );
+const ChainInventoryPage = lazy(() =>
+  import('../features/hse/chains/ChainInventoryPage').then((module) => ({
+    default: module.ChainInventoryPage,
+  })),
+);
+const ScrappedChainsPage = lazy(() =>
+  import('../features/hse/chains/ChainInventoryPage').then((module) => ({
+    default: module.ScrappedChainsPage,
+  })),
+);
+const ChainDetailsPage = lazy(() =>
+  import('../features/hse/chains/ChainDetailsPage').then((module) => ({
+    default: module.ChainDetailsPage,
+  })),
+);
+const NewChainPage = lazy(() =>
+  import('../features/hse/chains/ChainForm').then((module) => ({ default: module.NewChainPage })),
+);
 
 const DashboardPage = lazy(() =>
   import('../features/equipment/DashboardPage').then((module) => ({
@@ -56,22 +74,31 @@ export function App() {
                 <Route element={<RequireHSE />}>
                   <Route path="hse" element={<HSEShell />}>
                     <Route index element={<HSEPlaceholderPage page={hsePages[0]} />} />
-                    {hsePages.slice(1).map((page) =>
-                      page.engineerOnly ? (
-                        <Route
-                          key={page.id}
-                          element={<RequireHSE allowedRoles={['hse_engineer']} />}
-                        >
-                          <Route path={page.path} element={<HSEPlaceholderPage page={page} />} />
-                        </Route>
-                      ) : (
-                        <Route
-                          key={page.id}
-                          path={page.path}
-                          element={<HSEPlaceholderPage page={page} />}
-                        />
-                      ),
-                    )}
+                    <Route path="chains" element={<ChainInventoryPage />} />
+                    <Route element={<RequireHSE allowedRoles={['hse_engineer']} />}>
+                      <Route path="chains/new" element={<NewChainPage />} />
+                    </Route>
+                    <Route path="chains/:id" element={<ChainDetailsPage />} />
+                    <Route path="scrapped" element={<ScrappedChainsPage />} />
+                    {hsePages
+                      .slice(1)
+                      .filter((page) => page.id !== 'chains' && page.id !== 'scrapped')
+                      .map((page) =>
+                        page.engineerOnly ? (
+                          <Route
+                            key={page.id}
+                            element={<RequireHSE allowedRoles={['hse_engineer']} />}
+                          >
+                            <Route path={page.path} element={<HSEPlaceholderPage page={page} />} />
+                          </Route>
+                        ) : (
+                          <Route
+                            key={page.id}
+                            path={page.path}
+                            element={<HSEPlaceholderPage page={page} />}
+                          />
+                        ),
+                      )}
                     <Route
                       path="*"
                       element={

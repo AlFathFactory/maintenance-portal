@@ -41,6 +41,10 @@ function one<T>(data: T | null, error: unknown): T {
   return required(checked(data, error));
 }
 
+function tagPattern(tag: string): string {
+  return `%${tag.trim().replace(/[\\%_]/g, '\\$&')}%`;
+}
+
 export function createHSERepository(database: DB | null): HSERepository {
   function db(): DB {
     if (!database) throw new HSEError('SUPABASE_UNAVAILABLE');
@@ -96,11 +100,47 @@ export function createHSERepository(database: DB | null): HSERepository {
   const repo: HSERepository = {
     async listChains(filter) {
       const [from, to] = pageRange(filter.offset, filter.limit);
-      let query = db().from('hse_chains').select('*').eq('status', filter.status);
-      if (filter.tagNo) query = query.eq('tag_no', filter.tagNo.trim());
+      let query = db().from('hse_chains').select('*');
+      if (filter.status) query = query.eq('status', filter.status);
+      if (filter.tagNo?.trim()) query = query.ilike('tag_no', tagPattern(filter.tagNo));
+      if (filter.legs) query = query.eq('number_of_legs', filter.legs);
+      if (filter.scrappedFrom) {
+        assertDate(filter.scrappedFrom);
+        query = query.gte('scrapping_date', filter.scrappedFrom);
+      }
+      if (filter.scrappedTo) {
+        assertDate(filter.scrappedTo);
+        query = query.lte('scrapping_date', filter.scrappedTo);
+      }
       const result = await query
         .order(filter.sortBy ?? 'tag_no', { ascending: filter.ascending ?? true })
         .range(from, to);
+      return checked(result.data as Chain[] | null, result.error) ?? [];
+    },
+    async countChains(filter) {
+      let query = db().from('hse_chains').select('id', { count: 'exact', head: true });
+      if (filter.status) query = query.eq('status', filter.status);
+      if (filter.tagNo?.trim()) query = query.ilike('tag_no', tagPattern(filter.tagNo));
+      if (filter.legs) query = query.eq('number_of_legs', filter.legs);
+      if (filter.scrappedFrom) {
+        assertDate(filter.scrappedFrom);
+        query = query.gte('scrapping_date', filter.scrappedFrom);
+      }
+      if (filter.scrappedTo) {
+        assertDate(filter.scrappedTo);
+        query = query.lte('scrapping_date', filter.scrappedTo);
+      }
+      const result = await query;
+      checked(result.data, result.error);
+      return result.count ?? 0;
+    },
+    async listChainReplacements(predecessorIds) {
+      predecessorIds.forEach(assertUUID);
+      if (!predecessorIds.length) return [];
+      const result = await db()
+        .from('hse_chains')
+        .select('*')
+        .in('replaces_chain_id', predecessorIds);
       return checked(result.data as Chain[] | null, result.error) ?? [];
     },
     async getChain(id) {

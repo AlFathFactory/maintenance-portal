@@ -44,10 +44,28 @@ function fakeDatabase(rows = {}, role = 'hse_engineer') {
     from(table) {
       calls.push({ table });
       const query = {
-        select() {
+        select(columns, options) {
+          calls.push({ table, operation: 'select', columns, options });
           return this;
         },
-        eq() {
+        eq(column, value) {
+          calls.push({ table, operation: 'eq', column, value });
+          return this;
+        },
+        ilike(column, value) {
+          calls.push({ table, operation: 'ilike', column, value });
+          return this;
+        },
+        gte(column, value) {
+          calls.push({ table, operation: 'gte', column, value });
+          return this;
+        },
+        lte(column, value) {
+          calls.push({ table, operation: 'lte', column, value });
+          return this;
+        },
+        in(column, value) {
+          calls.push({ table, operation: 'in', column, value });
           return this;
         },
         order() {
@@ -82,14 +100,18 @@ function fakeDatabase(rows = {}, role = 'hse_engineer') {
           return { data: rows[table] ?? { id }, error: null };
         },
         then(resolve) {
-          return Promise.resolve({ data: rows[table] ?? [], error: null }).then(resolve);
+          return Promise.resolve({
+            data: rows[table] ?? [],
+            count: rows.count ?? null,
+            error: null,
+          }).then(resolve);
         },
       };
       return query;
     },
     async rpc(name, payload) {
       calls.push({ rpc: name, payload });
-      return { data: rows.rpc ?? null, error: null };
+      return { data: rows.rpc ?? null, error: rows.rpcError ?? null };
     },
   };
   return { database, calls };
@@ -133,11 +155,18 @@ test('HSE queries stay disabled until authorization and use isolated keys', () =
   assert.equal(queryKeys.canLoadHSE(userId, 'hse_engineer', false), true);
   for (const key of [
     queryKeys.hseKeys.chain(id),
+    queryKeys.hseKeys.chainCount({ status: 'active' }),
+    queryKeys.hseKeys.chainReplacements([id]),
     queryKeys.hseKeys.checklistVersion(2),
     queryKeys.hseKeys.inspection(id),
   ]) {
     assert.equal(key[0], 'hse');
   }
+  assert.deepEqual(
+    queryKeys.hseKeys.chainCount({ status: 'active' }).slice(0, 2),
+    queryKeys.hseKeys.chains,
+  );
+  assert.deepEqual(queryKeys.hseKeys.chainReplacements([id]).slice(0, 2), queryKeys.hseKeys.chains);
 });
 
 test('demo mode fails explicitly', async () => {
@@ -267,6 +296,139 @@ test('approval waits for an explicit engineer signature', async () => {
   });
   assert.equal(
     calls.some((call) => call.rpc),
+    false,
+  );
+});
+
+test('inventory applies server filters, pagination, and exact count', async () => {
+  const { database, calls } = fakeDatabase({ hse_chains: [], count: 137 });
+  const repo = repository.createHSERepository(database);
+  const filter = {
+    status: 'scrapped',
+    tagNo: 'CH-0',
+    legs: 2,
+    scrappedFrom: '2026-01-01',
+    scrappedTo: '2026-12-31',
+    offset: 20,
+    limit: 20,
+  };
+  await repo.listChains(filter);
+  assert.equal(await repo.countChains(filter), 137);
+  assert.equal(calls.filter((call) => call.operation === 'ilike').length, 2);
+  assert.equal(
+    calls.filter((call) => call.operation === 'eq' && call.column === 'number_of_legs').length,
+    2,
+  );
+  assert.equal(
+    calls.filter((call) => call.operation === 'gte' && call.column === 'scrapping_date').length,
+    2,
+  );
+  assert.equal(
+    calls.filter((call) => call.operation === 'lte' && call.column === 'scrapping_date').length,
+    2,
+  );
+  assert.ok(calls.some((call) => call.options?.count === 'exact' && call.options?.head === true));
+});
+
+test('replacement lookup batches predecessor UUIDs', async () => {
+  const { database, calls } = fakeDatabase({ hse_chains: [] });
+  await repository.createHSERepository(database).listChainReplacements([id]);
+  assert.ok(
+    calls.some(
+      (call) =>
+        call.operation === 'in' && call.column === 'replaces_chain_id' && call.value[0] === id,
+    ),
+  );
+});
+
+test('delayed replacement preserves predecessor UUID and reuses its tag', async () => {
+  const { database, calls } = fakeDatabase({
+    hse_chains: { id, status: 'scrapped', tag_no: 'CH-001' },
+  });
+  await repository.createHSERepository(database).createChain({
+    tag_no: 'CH-001',
+    replaces_chain_id: id,
+    number_of_legs: 2,
+    working_load_limit_tons: 3.15,
+    length_m: 2.5,
+    start_working_date: '2026-11-16',
+  });
+  const write = calls.find((call) => call.table === 'hse_chains' && call.operation === 'insert');
+  assert.equal(write.payload.replaces_chain_id, id);
+  assert.equal(write.payload.tag_no, 'CH-001');
+  assert.equal(write.payload.id, undefined);
+});
+
+test('mismatched predecessor tag is refused before writing', async () => {
+  const { database, calls } = fakeDatabase({
+    hse_chains: { id, status: 'scrapped', tag_no: 'CH-001' },
+  });
+  await assert.rejects(
+    repository.createHSERepository(database).createChain({
+      tag_no: 'CH-002',
+      replaces_chain_id: id,
+      number_of_legs: 2,
+      working_load_limit_tons: 3,
+      length_m: 2,
+      start_working_date: '2026-11-16',
+    }),
+    { code: 'INVALID_LINEAGE' },
+  );
+  assert.equal(
+    calls.some((call) => call.operation === 'insert'),
+    false,
+  );
+});
+
+test('scrapped chain edit is refused and supervisor cannot edit', async () => {
+  const input = {
+    number_of_legs: 2,
+    working_load_limit_tons: 3,
+    length_m: 2,
+    start_working_date: '2026-11-16',
+  };
+  const scrapped = fakeDatabase({ hse_chains: { id, status: 'scrapped' } });
+  await assert.rejects(repository.createHSERepository(scrapped.database).updateChain(id, input), {
+    code: 'IMMUTABLE_RECORD',
+  });
+  assert.equal(
+    scrapped.calls.some((call) => call.operation === 'update'),
+    false,
+  );
+  const supervisor = fakeDatabase({}, 'hse_supervisor');
+  await assert.rejects(repository.createHSERepository(supervisor.database).updateChain(id, input), {
+    code: 'FORBIDDEN',
+  });
+  assert.equal(
+    supervisor.calls.some((call) => call.operation === 'update'),
+    false,
+  );
+});
+
+test('immediate replacement calls one atomic RPC and propagates failure', async () => {
+  const { database, calls } = fakeDatabase({
+    hse_chains: { id, status: 'active', start_working_date: '2025-01-01' },
+    rpcError: { code: '42501', message: 'permission denied' },
+  });
+  await assert.rejects(
+    repository.createHSERepository(database).scrapChain({
+      chainId: id,
+      scrappingDate: '2026-11-16',
+      replacement: {
+        number_of_legs: 4,
+        working_load_limit_tons: 5,
+        length_m: 3,
+        start_working_date: '2026-11-16',
+      },
+    }),
+    { code: 'FORBIDDEN' },
+  );
+  const rpc = calls.find((call) => call.rpc);
+  assert.equal(rpc.rpc, 'hse_scrap_chain');
+  assert.equal(rpc.payload.p_create_replacement, true);
+  assert.equal(rpc.payload.p_number_of_legs, 4);
+  assert.equal(
+    calls.some((call) => call.operation === 'update' || call.operation === 'insert'),
     false,
   );
 });

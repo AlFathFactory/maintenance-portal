@@ -5,6 +5,8 @@ export const hseKeys = {
   all: ['hse'] as const,
   chains: ['hse', 'chains'] as const,
   chainList: (filter: ChainListFilter) => ['hse', 'chains', 'list', filter] as const,
+  chainCount: (filter: Partial<ChainListFilter>) => ['hse', 'chains', 'count', filter] as const,
+  chainReplacements: (ids: string[]) => ['hse', 'chains', 'replacements', ids] as const,
   chain: (id: string) => ['hse', 'chains', 'detail', id] as const,
   lineage: (id: string) => ['hse', 'chains', 'lineage', id] as const,
   checklist: ['hse', 'checklist'] as const,

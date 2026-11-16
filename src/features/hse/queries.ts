@@ -25,12 +25,30 @@ function useHSEEnabled(): boolean {
   return canLoadHSE(user?.id ?? null, hseRole, loading);
 }
 
-export function useHSEChains(filter: ChainListFilter) {
+export function useHSEChains(filter: ChainListFilter, active = true) {
   const enabled = useHSEEnabled();
   return useQuery({
     queryKey: hseKeys.chainList(filter),
     queryFn: () => hseRepository.listChains(filter),
+    enabled: enabled && active,
+  });
+}
+
+export function useHSEChainCount(filter: Partial<ChainListFilter>) {
+  const enabled = useHSEEnabled();
+  return useQuery({
+    queryKey: hseKeys.chainCount(filter),
+    queryFn: () => hseRepository.countChains(filter),
     enabled,
+  });
+}
+
+export function useHSEChainReplacements(ids: string[]) {
+  const enabled = useHSEEnabled();
+  return useQuery({
+    queryKey: hseKeys.chainReplacements(ids),
+    queryFn: () => hseRepository.listChainReplacements(ids),
+    enabled: enabled && ids.length > 0,
   });
 }
 
