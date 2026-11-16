@@ -10,7 +10,7 @@ import { LanguageSwitcher } from '../shared/ui/LanguageSwitcher';
 export function AppShell() {
   const { t } = useTranslation();
   const [loginOpen, setLoginOpen] = useState(false);
-  const { user, isAdmin, loading, error, signOut } = useAuth();
+  const { user, isAdmin, hseRole, loading, error, signOut } = useAuth();
   const toast = useToast();
   const detail = useLocation().pathname.startsWith('/equipment/');
   const teamsPage = useLocation().pathname === '/teams';
@@ -63,6 +63,11 @@ export function AppShell() {
             >
               ⚙ <span>{t('shell.settings')}</span>
             </NavLink>
+            {hseRole && (
+              <NavLink to="/hse" className="nav-item">
+                {t('hse.title')}
+              </NavLink>
+            )}
           </nav>
           <div className="sidebar-bottom">
             <div className="sidebar-note">
@@ -108,7 +113,10 @@ export function AppShell() {
               </>
             ) : user ? (
               <>
-                <span className="account-chip">{t('shell.unauthorized')}</span>
+                <span className="account-chip">
+                  {hseRole ? user.email : t('shell.unauthorized')}
+                </span>
+                {hseRole && <Link to="/hse">{t('hse.title')}</Link>}
                 <button className="text-button" onClick={logout}>
                   {t('shell.logout')}
                 </button>
@@ -131,6 +139,7 @@ export function AppShell() {
             <NavLink to="/settings" className={({ isActive }) => (isActive ? 'active' : '')}>
               {t('shell.settings')}
             </NavLink>
+            {hseRole && <NavLink to="/hse">{t('hse.title')}</NavLink>}
           </nav>
         )}
         <main>

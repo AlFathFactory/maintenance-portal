@@ -7,6 +7,8 @@ import { ToastProvider } from '../shared/ui/ToastProvider';
 import { AppShell } from './AppShell';
 import { RequireAdmin } from '../features/auth/RequireAdmin';
 import { AccessDeniedPage } from '../features/auth/AccessDeniedPage';
+import { RequireHSE } from '../features/auth/RequireHSE';
+import { HSEHomePage } from '../features/auth/HSEHomePage';
 
 const DashboardPage = lazy(() =>
   import('../features/equipment/DashboardPage').then((module) => ({
@@ -44,6 +46,9 @@ export function App() {
               <Routes>
                 <Route path="qr/:token" element={<PublicQrPage />} />
                 <Route path="access-denied" element={<AccessDeniedPage />} />
+                <Route element={<RequireHSE />}>
+                  <Route path="hse" element={<HSEHomePage />} />
+                </Route>
                 <Route element={<AppShell />}>
                   <Route path="teams" element={<TeamsPage />} />
                 </Route>
