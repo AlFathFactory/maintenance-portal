@@ -34,6 +34,11 @@ const ChainDetailsPage = lazy(() =>
 const NewChainPage = lazy(() =>
   import('../features/hse/chains/ChainForm').then((module) => ({ default: module.NewChainPage })),
 );
+const ChecklistManagementPage = lazy(() =>
+  import('../features/hse/checklist/ChecklistManagementPage').then((module) => ({
+    default: module.ChecklistManagementPage,
+  })),
+);
 
 const DashboardPage = lazy(() =>
   import('../features/equipment/DashboardPage').then((module) => ({
@@ -80,9 +85,13 @@ export function App() {
                     </Route>
                     <Route path="chains/:id" element={<ChainDetailsPage />} />
                     <Route path="scrapped" element={<ScrappedChainsPage />} />
+                    <Route path="checklist" element={<ChecklistManagementPage />} />
                     {hsePages
                       .slice(1)
-                      .filter((page) => page.id !== 'chains' && page.id !== 'scrapped')
+                      .filter(
+                        (page) =>
+                          page.id !== 'chains' && page.id !== 'scrapped' && page.id !== 'checklist',
+                      )
                       .map((page) =>
                         page.engineerOnly ? (
                           <Route

@@ -14,6 +14,7 @@ let repository;
 let validation;
 let errors;
 let queryKeys;
+let checklistModel;
 
 before(async () => {
   for (const [name, input] of [
@@ -21,6 +22,7 @@ before(async () => {
     ['validation', 'src/services/hse/validation.ts'],
     ['errors', 'src/services/hse/errors.ts'],
     ['queryKeys', 'src/features/hse/queryKeys.ts'],
+    ['checklistModel', 'src/features/hse/checklist/checklistModel.ts'],
   ]) {
     const bundle = await rolldown({ input });
     await bundle.write({ dir: output, format: 'cjs' });
@@ -30,6 +32,7 @@ before(async () => {
   validation = require(path.join(output, 'validation.js'));
   errors = require(path.join(output, 'errors.js'));
   queryKeys = require(path.join(output, 'queryKeys.js'));
+  checklistModel = require(path.join(output, 'checklistModel.js'));
 });
 after(() => fs.rmSync(output, { recursive: true, force: true }));
 
@@ -68,7 +71,8 @@ function fakeDatabase(rows = {}, role = 'hse_engineer') {
           calls.push({ table, operation: 'in', column, value });
           return this;
         },
-        order() {
+        order(column) {
+          calls.push({ table, operation: 'order', column });
           return this;
         },
         range() {
@@ -431,4 +435,239 @@ test('immediate replacement calls one atomic RPC and propagates failure', async 
     calls.some((call) => call.operation === 'update' || call.operation === 'insert'),
     false,
   );
+});
+
+test('version selection prefers actual published state and keeps explicit selection', () => {
+  const versions = [
+    { version: 2, state: 'draft' },
+    { version: 1, state: 'published' },
+    { version: 3, state: 'archived' },
+  ];
+  assert.equal(checklistModel.selectedVersion(versions, null), 1);
+  assert.equal(checklistModel.selectedVersion(versions, '3'), 3);
+  assert.equal(checklistModel.selectedVersion(versions, 'missing'), null);
+  assert.equal(checklistModel.selectedVersion([], null), null);
+  assert.equal(checklistModel.canEditChecklist('hse_engineer', 'draft'), true);
+  assert.equal(checklistModel.canEditChecklist('hse_engineer', 'published'), false);
+  assert.equal(checklistModel.canEditChecklist('hse_engineer', 'archived'), false);
+  assert.equal(checklistModel.canEditChecklist('hse_supervisor', 'draft'), false);
+});
+
+test('new checklist positions append without changing existing orders', () => {
+  assert.equal(checklistModel.nextSortOrder([]), 1);
+  assert.equal(checklistModel.nextSortOrder([1, 3, 2]), 4);
+  assert.throws(
+    () => checklistModel.assertUniqueSectionKey([{ id, section_key: 'hooks' }], 'hooks'),
+    { code: 'DUPLICATE_RECORD' },
+  );
+  checklistModel.assertUniqueSectionKey([{ id, section_key: 'hooks' }], 'hooks', id);
+});
+
+test('checklist read nests checkpoints under backend-ordered sections', async () => {
+  const secondId = '33333333-3333-4333-8333-333333333333';
+  const { database, calls } = fakeDatabase({
+    hse_chain_checklist_versions: { version: 1, state: 'published', published_at: '2026-11-16' },
+    hse_chain_checklist_sections: [
+      { id, template_version: 1, sort_order: 1 },
+      { id: secondId, template_version: 1, sort_order: 2 },
+    ],
+    hse_chain_checklist_items: [
+      { id: 'a', section_id: id, sort_order: 1 },
+      { id: 'b', section_id: secondId, sort_order: 1 },
+    ],
+  });
+  const checklist = await repository.createHSERepository(database).getChecklist(1);
+  assert.equal(checklist.sections.length, 2);
+  assert.deepEqual(
+    checklist.sections.map((section) => section.items[0].id),
+    ['a', 'b'],
+  );
+  assert.ok(
+    calls.some(
+      (call) =>
+        call.table === 'hse_chain_checklist_sections' &&
+        call.operation === 'order' &&
+        call.column === 'sort_order',
+    ),
+  );
+  assert.ok(
+    calls.some(
+      (call) =>
+        call.table === 'hse_chain_checklist_items' &&
+        call.operation === 'order' &&
+        call.column === 'sort_order',
+    ),
+  );
+});
+
+test('Draft section and checkpoint writes use verified tables and stable IDs', async () => {
+  const { database, calls } = fakeDatabase({
+    hse_chain_checklist_versions: { version: 2, state: 'draft' },
+    hse_chain_checklist_sections: { id, template_version: 2 },
+    hse_chain_checklist_items: { id, template_version: 2 },
+  });
+  const repo = repository.createHSERepository(database);
+  await repo.createChecklistSection({
+    template_version: 2,
+    section_key: 'hooks',
+    sort_order: 7,
+    name_en: 'Hooks',
+    name_ar: 'خطاطيف',
+  });
+  await repo.updateChecklistSection(id, { name_en: 'Hooks and links' });
+  await repo.createChecklistItem({
+    template_version: 2,
+    section_id: id,
+    sort_order: 30,
+    check_text_en: 'Check hooks',
+  });
+  await repo.updateChecklistItem(id, { check_text_en: 'Check all hooks' });
+  assert.ok(
+    calls.some(
+      (call) =>
+        call.table === 'hse_chain_checklist_sections' &&
+        call.operation === 'insert' &&
+        call.payload.sort_order === 7,
+    ),
+  );
+  assert.ok(
+    calls.some(
+      (call) =>
+        call.table === 'hse_chain_checklist_items' &&
+        call.operation === 'insert' &&
+        call.payload.section_id === id,
+    ),
+  );
+  assert.ok(
+    calls.some(
+      (call) =>
+        call.table === 'hse_chain_checklist_items' &&
+        call.operation === 'update' &&
+        call.payload.check_text_en === 'Check all hooks' &&
+        !('id' in call.payload),
+    ),
+  );
+});
+
+test('Archived checklist rejects edits and supervisor rejects Draft writes', async () => {
+  const input = {
+    template_version: 3,
+    section_key: 'hooks',
+    sort_order: 1,
+    name_en: 'Hooks',
+    name_ar: 'خطاطيف',
+  };
+  const archived = fakeDatabase({
+    hse_chain_checklist_versions: { version: 3, state: 'archived' },
+  });
+  await assert.rejects(
+    repository.createHSERepository(archived.database).createChecklistSection(input),
+    { code: 'IMMUTABLE_RECORD' },
+  );
+  assert.equal(
+    archived.calls.some((call) => call.operation === 'insert'),
+    false,
+  );
+  const supervisor = fakeDatabase(
+    { hse_chain_checklist_versions: { version: 3, state: 'draft' } },
+    'hse_supervisor',
+  );
+  await assert.rejects(
+    repository.createHSERepository(supervisor.database).createChecklistSection(input),
+    { code: 'FORBIDDEN' },
+  );
+  assert.equal(
+    supervisor.calls.some((call) => call.operation === 'insert'),
+    false,
+  );
+});
+
+test('Draft section deletion is one database delete, not browser checkpoint deletes', async () => {
+  const { database, calls } = fakeDatabase({
+    hse_chain_checklist_versions: { version: 2, state: 'draft' },
+    hse_chain_checklist_sections: { id, template_version: 2 },
+  });
+  await repository.createHSERepository(database).deleteChecklistSection(id);
+  assert.equal(
+    calls.filter(
+      (call) => call.operation === 'delete' && call.table === 'hse_chain_checklist_sections',
+    ).length,
+    1,
+  );
+  assert.equal(
+    calls.some((call) => call.operation === 'delete' && call.table === 'hse_chain_checklist_items'),
+    false,
+  );
+});
+
+test('Draft checkpoint deletion targets only its UUID', async () => {
+  const { database, calls } = fakeDatabase({
+    hse_chain_checklist_versions: { version: 2, state: 'draft' },
+    hse_chain_checklist_items: { id, template_version: 2 },
+  });
+  await repository.createHSERepository(database).deleteChecklistItem(id);
+  assert.equal(
+    calls.filter(
+      (call) => call.operation === 'delete' && call.table === 'hse_chain_checklist_items',
+    ).length,
+    1,
+  );
+  assert.ok(
+    calls.some(
+      (call) =>
+        call.table === 'hse_chain_checklist_items' &&
+        call.operation === 'eq' &&
+        call.column === 'id' &&
+        call.value === id,
+    ),
+  );
+});
+
+test('published checkpoint update and invalid Draft input are rejected before writes', async () => {
+  const published = fakeDatabase({
+    hse_chain_checklist_versions: { version: 1, state: 'published' },
+    hse_chain_checklist_items: { id, template_version: 1 },
+  });
+  await assert.rejects(
+    repository
+      .createHSERepository(published.database)
+      .updateChecklistItem(id, { check_text_en: 'Changed' }),
+    { code: 'IMMUTABLE_RECORD' },
+  );
+  assert.equal(
+    published.calls.some((call) => call.operation === 'update'),
+    false,
+  );
+  assert.throws(
+    () =>
+      validation.validateSectionCreate({
+        template_version: 2,
+        section_key: ' ',
+        sort_order: 1,
+        name_en: 'Hooks',
+        name_ar: 'خطاطيف',
+      }),
+    { code: 'INVALID_INPUT' },
+  );
+  assert.throws(
+    () =>
+      validation.validateItemCreate({
+        template_version: 2,
+        section_id: id,
+        sort_order: 0,
+        check_text_en: 'Check',
+      }),
+    { code: 'INVALID_INPUT' },
+  );
+});
+
+test('empty checklist is a valid loaded version with no sections', async () => {
+  const { database } = fakeDatabase({
+    hse_chain_checklist_versions: { version: 2, state: 'draft', published_at: null },
+    hse_chain_checklist_sections: [],
+    hse_chain_checklist_items: [],
+  });
+  const result = await repository.createHSERepository(database).getChecklist(2);
+  assert.equal(result.version.published_at, null);
+  assert.deepEqual(result.sections, []);
 });
