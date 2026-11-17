@@ -59,6 +59,16 @@ const InspectionDetailsPage = lazy(() =>
     default: module.InspectionDetailsPage,
   })),
 );
+const PendingApprovalsPage = lazy(() =>
+  import('../features/hse/approvals/PendingApprovalsPage').then((module) => ({
+    default: module.PendingApprovalsPage,
+  })),
+);
+const EngineerReviewPage = lazy(() =>
+  import('../features/hse/approvals/EngineerReviewPage').then((module) => ({
+    default: module.EngineerReviewPage,
+  })),
+);
 
 const DashboardPage = lazy(() =>
   import('../features/equipment/DashboardPage').then((module) => ({
@@ -110,6 +120,10 @@ export function App() {
                     <Route path="inspections/new" element={<InspectionCreatePage />} />
                     <Route path="inspections/:id/edit" element={<InspectionFormPage />} />
                     <Route path="inspections/:id" element={<InspectionDetailsPage />} />
+                    <Route element={<RequireHSE allowedRoles={['hse_engineer']} />}>
+                      <Route path="approvals" element={<PendingApprovalsPage />} />
+                      <Route path="approvals/:id" element={<EngineerReviewPage />} />
+                    </Route>
                     {hsePages
                       .slice(1)
                       .filter(
@@ -117,7 +131,8 @@ export function App() {
                           page.id !== 'chains' &&
                           page.id !== 'scrapped' &&
                           page.id !== 'checklist' &&
-                          page.id !== 'inspections',
+                          page.id !== 'inspections' &&
+                          page.id !== 'approvals',
                       )
                       .map((page) =>
                         page.engineerOnly ? (

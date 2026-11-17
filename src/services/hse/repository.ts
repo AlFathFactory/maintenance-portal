@@ -389,6 +389,10 @@ export function createHSERepository(database: DB | null): HSERepository {
         assertUUID(filter.chainId);
         query = query.eq('chain_id', filter.chainId);
       }
+      if (filter.inspectorId) {
+        assertUUID(filter.inspectorId);
+        query = query.eq('inspector_id', filter.inspectorId);
+      }
       if (filter.status) query = query.eq('status', filter.status);
       if (filter.search?.trim()) {
         const search = filter.search.trim();
@@ -414,6 +418,10 @@ export function createHSERepository(database: DB | null): HSERepository {
       if (filter.chainId) {
         assertUUID(filter.chainId);
         query = query.eq('chain_id', filter.chainId);
+      }
+      if (filter.inspectorId) {
+        assertUUID(filter.inspectorId);
+        query = query.eq('inspector_id', filter.inspectorId);
       }
       if (filter.status) query = query.eq('status', filter.status);
       if (filter.search?.trim()) {

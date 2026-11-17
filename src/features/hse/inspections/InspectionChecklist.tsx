@@ -42,7 +42,11 @@ export function InspectionChecklist({
             </div>
             <div className="inspection-section-items">
               {section.items.map((item, itemIndex) => (
-                <fieldset key={item.id} className="inspection-checkpoint">
+                <fieldset
+                  key={item.id}
+                  id={`inspection-item-${item.id}`}
+                  className={`inspection-checkpoint ${answers[item.id] === 'Faulty' ? 'inspection-checkpoint-faulty' : ''}`}
+                >
                   <legend>
                     <span>
                       {sectionIndex + 1}.{itemIndex + 1}

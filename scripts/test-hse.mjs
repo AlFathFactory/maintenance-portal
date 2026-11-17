@@ -16,6 +16,7 @@ let errors;
 let queryKeys;
 let checklistModel;
 let inspectionModel;
+let approvalModel;
 
 before(async () => {
   for (const [name, input] of [
@@ -25,6 +26,7 @@ before(async () => {
     ['queryKeys', 'src/features/hse/queryKeys.ts'],
     ['checklistModel', 'src/features/hse/checklist/checklistModel.ts'],
     ['inspectionModel', 'src/features/hse/inspections/inspectionModel.ts'],
+    ['approvalModel', 'src/features/hse/approvals/approvalModel.ts'],
   ]) {
     const bundle = await rolldown({ input });
     await bundle.write({ dir: output, format: 'cjs' });
@@ -36,6 +38,7 @@ before(async () => {
   queryKeys = require(path.join(output, 'queryKeys.js'));
   checklistModel = require(path.join(output, 'checklistModel.js'));
   inspectionModel = require(path.join(output, 'inspectionModel.js'));
+  approvalModel = require(path.join(output, 'approvalModel.js'));
 });
 after(() => fs.rmSync(output, { recursive: true, force: true }));
 
@@ -808,5 +811,164 @@ test('signed Draft rejects further result edits before upsert', async () => {
   assert.equal(
     calls.some((call) => call.operation === 'upsert'),
     false,
+  );
+});
+
+function approvalDetails(status = 'pending_approval', result = 'Faulty', engineerSigner = null) {
+  return {
+    inspection: { id, inspector_id: id, status },
+    checklist: { sections: [{ id, items: [{ id: 'checkpoint' }] }] },
+    results: result ? [{ item_id: 'checkpoint', result }] : [],
+    comments: [{ section_id: id, comments_corrective_actions: 'Replace hook' }],
+    signatures: [
+      { signer_role: 'inspector', signed_by: id },
+      ...(engineerSigner ? [{ signer_role: 'hse_engineer', signed_by: engineerSigner }] : []),
+    ],
+  };
+}
+
+test('approval readiness separates Engineer signing from final approval and allows Faulty findings', () => {
+  const pending = approvalDetails();
+  assert.equal(approvalModel.approvalReadiness(pending, userId, true).canSign, true);
+  assert.equal(approvalModel.approvalReadiness(pending, userId, true).canApprove, false);
+  assert.equal(approvalModel.approvalReadiness(pending, userId, false).canSign, false);
+  const signed = approvalDetails('pending_approval', 'Faulty', userId);
+  assert.equal(approvalModel.approvalReadiness(signed, userId, true).canSign, false);
+  assert.equal(approvalModel.approvalReadiness(signed, userId, true).canApprove, true);
+  assert.equal(approvalModel.approvalReadiness(signed, id, true).canApprove, false);
+  assert.equal(
+    approvalModel.approvalReadiness(approvalDetails('approved', 'Faulty', userId), userId, true)
+      .canApprove,
+    false,
+  );
+});
+
+test('approval readiness blocks incomplete results and missing inspector attestation', () => {
+  const incomplete = approvalDetails('pending_approval', null);
+  assert.equal(approvalModel.approvalReadiness(incomplete, userId, true).canSign, false);
+  const unsigned = approvalDetails();
+  unsigned.signatures = [];
+  assert.equal(approvalModel.approvalReadiness(unsigned, userId, true).canSign, false);
+});
+
+test('supervisor cannot sign as Engineer even on a submitted inspection', async () => {
+  const { database, calls } = fakeDatabase(
+    { hse_chain_inspections: { id, status: 'pending_approval' } },
+    'hse_supervisor',
+  );
+  await assert.rejects(repository.createHSERepository(database).signAsEngineer(id), {
+    code: 'FORBIDDEN',
+  });
+  assert.equal(
+    calls.some((call) => call.operation === 'insert'),
+    false,
+  );
+});
+
+test('Engineer signature uses authenticated identity and rejects a duplicate', async () => {
+  const rows = {
+    hse_chain_inspections: { id, inspector_id: id, status: 'pending_approval' },
+    hse_inspection_signatures: [{ signer_role: 'inspector', signed_by: id }],
+  };
+  const { database, calls } = fakeDatabase(rows);
+  await repository.createHSERepository(database).signAsEngineer(id);
+  assert.deepEqual(
+    calls.find((call) => call.table === 'hse_inspection_signatures' && call.operation === 'insert')
+      .payload,
+    {
+      inspection_id: id,
+      signer_role: 'hse_engineer',
+      signed_by: userId,
+    },
+  );
+  rows.hse_inspection_signatures.push({ signer_role: 'hse_engineer', signed_by: userId });
+  await assert.rejects(repository.createHSERepository(database).signAsEngineer(id), {
+    code: 'DUPLICATE_RECORD',
+  });
+  assert.equal(
+    calls.filter(
+      (call) => call.table === 'hse_inspection_signatures' && call.operation === 'insert',
+    ).length,
+    1,
+  );
+});
+
+test('final approval invokes RPC only when the current Engineer signed', async () => {
+  const rows = {
+    hse_chain_inspections: { id, status: 'pending_approval' },
+    hse_inspection_signatures: [{ signer_role: 'hse_engineer', signed_by: id }],
+    rpc: { id, status: 'approved' },
+  };
+  const { database, calls } = fakeDatabase(rows);
+  const repo = repository.createHSERepository(database);
+  await assert.rejects(repo.approveInspection(id), { code: 'MISSING_SIGNATURE' });
+  assert.equal(
+    calls.some((call) => call.rpc),
+    false,
+  );
+  rows.hse_inspection_signatures = [{ signer_role: 'hse_engineer', signed_by: userId }];
+  await repo.approveInspection(id);
+  assert.deepEqual(
+    calls.find((call) => call.rpc),
+    { rpc: 'hse_approve_chain_inspection', payload: { p_inspection_id: id } },
+  );
+  assert.equal(
+    calls.some((call) => call.operation === 'update'),
+    false,
+  );
+});
+
+test('pending approval list filters by inspector and submission date without fetching results per row', async () => {
+  const { database, calls } = fakeDatabase({ hse_chain_inspections: [], count: 3 });
+  const repo = repository.createHSERepository(database);
+  const filter = {
+    status: 'pending_approval',
+    inspectorId: userId,
+    sortBy: 'submitted_at',
+    offset: 20,
+    limit: 20,
+  };
+  await repo.listInspections(filter);
+  assert.equal(await repo.countInspections(filter), 3);
+  assert.equal(
+    calls.filter((call) => call.operation === 'eq' && call.column === 'inspector_id').length,
+    2,
+  );
+  assert.ok(calls.some((call) => call.operation === 'order' && call.column === 'submitted_at'));
+  assert.equal(
+    calls.some((call) => call.table === 'hse_chain_inspection_results'),
+    false,
+  );
+});
+
+test('recovery interprets persisted signatures and approved state before retrying', () => {
+  assert.equal(
+    approvalModel.signRecovery(approvalDetails('pending_approval', 'OK', userId), userId),
+    'signed',
+  );
+  assert.equal(
+    approvalModel.signRecovery(approvalDetails('pending_approval', 'OK', id), userId),
+    'other_signer',
+  );
+  assert.equal(approvalModel.signRecovery(approvalDetails(), userId), 'retry');
+  assert.equal(
+    approvalModel.signRecovery(approvalDetails('approved', 'OK', userId), userId),
+    'state_changed',
+  );
+  assert.equal(
+    approvalModel.approvalRecovery(approvalDetails('approved', 'Faulty', userId), userId, true),
+    'approved',
+  );
+  assert.equal(
+    approvalModel.approvalRecovery(
+      approvalDetails('pending_approval', 'Faulty', userId),
+      userId,
+      true,
+    ),
+    'retry',
+  );
+  assert.equal(
+    approvalModel.approvalRecovery(approvalDetails('pending_approval', 'Faulty', id), userId, true),
+    'state_changed',
   );
 });

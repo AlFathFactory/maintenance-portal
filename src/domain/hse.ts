@@ -158,11 +158,12 @@ export interface InspectionDetails {
 }
 export interface InspectionListFilter {
   chainId?: string;
+  inspectorId?: string;
   status?: InspectionStatus;
   search?: string;
   dateFrom?: string;
   dateTo?: string;
-  sortBy?: 'inspection_date' | 'status' | 'created_at';
+  sortBy?: 'inspection_date' | 'submitted_at' | 'status' | 'created_at';
   ascending?: boolean;
   offset?: number;
   limit?: number;

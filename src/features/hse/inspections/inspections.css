@@ -345,6 +345,63 @@
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 1rem;
 }
+.inspection-integrity {
+  color: #8e2727;
+  background: #fff0ee;
+  border-inline-start: 3px solid #b83a32;
+  border-radius: 0.4rem;
+  padding: 0.8rem 1rem;
+}
+.inspection-record-note {
+  color: #654b00;
+  background: #fff3cf;
+  border-inline-start: 3px solid #ad7f00;
+  border-radius: 0.4rem;
+  padding: 0.8rem 1rem;
+  margin: 0;
+}
+.inspection-findings {
+  display: grid;
+  gap: 0.8rem;
+  margin: 0;
+  padding-inline-start: 1.3rem;
+}
+.inspection-findings li {
+  padding: 0.65rem;
+  border-inline-start: 3px solid #b83a32;
+  background: #fff5f3;
+  border-radius: 0.4rem;
+}
+.inspection-findings button {
+  display: grid;
+  gap: 0.25rem;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: start;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.inspection-findings strong,
+.inspection-faulty-count {
+  color: #9a2525;
+}
+.inspection-findings small {
+  color: #52646b;
+}
+.inspection-findings p {
+  margin: 0.4rem 0 0;
+  white-space: pre-wrap;
+}
+.inspection-checkpoint-faulty {
+  border-color: #c64a40;
+  background: #fff8f6;
+}
+.inspection-checkpoint-faulty legend {
+  color: #9a2525;
+}
 @media (max-width: 700px) {
   .inspection-stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));

@@ -29,7 +29,7 @@ export function InspectionProgress({
         <span>
           OK: <strong>{progress.OK}</strong>
         </span>
-        <span>
+        <span className={progress.Faulty > 0 ? 'inspection-faulty-count' : ''}>
           Faulty: <strong>{progress.Faulty}</strong>
         </span>
         <span>

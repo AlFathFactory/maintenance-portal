@@ -326,6 +326,63 @@ export const en = {
     noApproval: 'This inspection has not been approved.',
     noCheckpoints: 'The selected checklist has no checkpoints.',
   },
+  approvalUI: {
+    title: 'Pending approvals',
+    intro: 'Review submitted chain inspections and record administrative approval.',
+    awaiting: 'inspections awaiting approval',
+    refresh: 'Refresh',
+    review: 'Review',
+    back: 'Back to pending approvals',
+    inspectorFilter: 'Inspector UUID',
+    invalidInspector: 'Enter a valid inspector UUID or clear the field.',
+    filteredInspector: 'Filtered inspector',
+    apply: 'Apply',
+    direction: 'Order',
+    submissionDate: 'Submission date',
+    submittedAt: 'Submitted at',
+    empty: 'No inspections are currently awaiting approval.',
+    findings: 'Inspection findings',
+    faulty: 'Faulty',
+    noFaulty: 'No Faulty checkpoints were recorded.',
+    unansweredWarning:
+      '{{count}} checkpoint results are missing. Review the record before any action.',
+    administrativeNote:
+      'Inspection approval confirms the record was reviewed. It does not certify that the chain is safe for use. Review all Faulty findings separately.',
+    signedBy: 'Signed by',
+    missingInspectorSignature:
+      'The inspector attestation is missing. Engineer approval cannot proceed.',
+    engineerAttestation: 'HSE Engineer attestation',
+    noEngineerSignature: 'No HSE Engineer attestation yet.',
+    actions: 'Engineer actions',
+    notSubmitted: 'This inspection has not been submitted for approval.',
+    incomplete: 'The saved checklist results are incomplete. Approval cannot proceed.',
+    otherSigner:
+      'Another HSE Engineer has signed this inspection. Only that signer can approve it.',
+    signedPending: 'Your Engineer attestation is saved. Approval is still pending.',
+    stateChanged: 'The inspection changed while you were reviewing it. Check the refreshed record.',
+    alreadyProcessed:
+      'This inspection has already been approved. The historical record is read-only.',
+    refreshRequired:
+      'The outcome could not be confirmed. Refresh the record before retrying; do not sign again.',
+    sign: 'Sign as HSE Engineer',
+    signTitle: 'Engineer electronic attestation',
+    signHint:
+      'Review the saved results, Faulty findings, comments, and inspector signature. Signing records a durable authenticated-account attestation.',
+    signConfirm: 'I reviewed this inspection and explicitly attest to the statement above.',
+    signing: 'Signing…',
+    signed: 'Engineer attestation recorded.',
+    signedRecovered: 'Your Engineer attestation was saved. Review the record before approval.',
+    approve: 'Approve inspection',
+    retryApproval: 'Retry approval',
+    approveTitle: 'Confirm administrative approval',
+    approveHint:
+      'This action finalizes the inspection record. Faulty findings remain visible and require separate operational judgment.',
+    approveConfirm: 'I confirm administrative approval of this signed inspection record.',
+    approving: 'Approving…',
+    approved: 'Inspection administratively approved.',
+    approvalFailed:
+      'Approval did not complete. Your Engineer signature is saved; retry approval after checking the record.',
+  },
   checklistUI: {
     title: 'Chain inspection checklist',
     intro: 'Browse versioned inspection criteria and maintain the Draft for future inspections.',
