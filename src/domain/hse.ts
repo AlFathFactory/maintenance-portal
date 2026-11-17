@@ -120,6 +120,7 @@ export type InspectionListItem = Pick<
   | 'chain_tag_snapshot'
   | 'inspection_date'
   | 'inspector_id'
+  | 'template_version'
   | 'status'
   | 'submitted_at'
   | 'approved_by'
@@ -158,6 +159,11 @@ export interface InspectionDetails {
 export interface InspectionListFilter {
   chainId?: string;
   status?: InspectionStatus;
+  search?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  sortBy?: 'inspection_date' | 'status' | 'created_at';
+  ascending?: boolean;
   offset?: number;
   limit?: number;
 }

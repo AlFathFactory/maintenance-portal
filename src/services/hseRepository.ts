@@ -47,6 +47,7 @@ export interface HSERepository {
   deleteChecklistItem(id: string): Promise<void>;
 
   listInspections(filter?: InspectionListFilter): Promise<InspectionListItem[]>;
+  countInspections(filter?: InspectionListFilter): Promise<number>;
   getInspection(id: string): Promise<InspectionDetails | null>;
   createInspection(input: InspectionCreateInput): Promise<ChainInspection>;
   updateInspectionDraft(id: string, input: InspectionDraftUpdateInput): Promise<ChainInspection>;

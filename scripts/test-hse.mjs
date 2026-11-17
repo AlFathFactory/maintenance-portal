@@ -15,6 +15,7 @@ let validation;
 let errors;
 let queryKeys;
 let checklistModel;
+let inspectionModel;
 
 before(async () => {
   for (const [name, input] of [
@@ -23,6 +24,7 @@ before(async () => {
     ['errors', 'src/services/hse/errors.ts'],
     ['queryKeys', 'src/features/hse/queryKeys.ts'],
     ['checklistModel', 'src/features/hse/checklist/checklistModel.ts'],
+    ['inspectionModel', 'src/features/hse/inspections/inspectionModel.ts'],
   ]) {
     const bundle = await rolldown({ input });
     await bundle.write({ dir: output, format: 'cjs' });
@@ -33,6 +35,7 @@ before(async () => {
   errors = require(path.join(output, 'errors.js'));
   queryKeys = require(path.join(output, 'queryKeys.js'));
   checklistModel = require(path.join(output, 'checklistModel.js'));
+  inspectionModel = require(path.join(output, 'inspectionModel.js'));
 });
 after(() => fs.rmSync(output, { recursive: true, force: true }));
 
@@ -57,6 +60,10 @@ function fakeDatabase(rows = {}, role = 'hse_engineer') {
         },
         ilike(column, value) {
           calls.push({ table, operation: 'ilike', column, value });
+          return this;
+        },
+        or(value) {
+          calls.push({ table, operation: 'or', value });
           return this;
         },
         gte(column, value) {
@@ -240,7 +247,7 @@ test('submission requires a prior explicit inspector signature', async () => {
   const inspection = { id, inspector_id: userId, status: 'draft' };
   const { database, calls } = fakeDatabase({
     hse_chain_inspections: inspection,
-    hse_inspection_signatures: [],
+    hse_inspection_signatures: null,
   });
   await assert.rejects(repository.createHSERepository(database).submitInspection(id), {
     code: 'MISSING_SIGNATURE',
@@ -670,4 +677,136 @@ test('empty checklist is a valid loaded version with no sections', async () => {
   const result = await repository.createHSERepository(database).getChecklist(2);
   assert.equal(result.version.published_at, null);
   assert.deepEqual(result.sections, []);
+});
+
+test('inspection progress treats N/A as completed and excludes stale item IDs', () => {
+  const checklist = { sections: [{ id, items: [{ id: 'a' }, { id: 'b' }, { id: 'c' }] }] };
+  const answers = { a: 'OK', b: 'N/A', obsolete: 'Faulty' };
+  assert.deepEqual(inspectionModel.inspectionProgress(checklist, answers), {
+    total: 3,
+    completed: 2,
+    unanswered: 1,
+    OK: 1,
+    Faulty: 0,
+    'N/A': 1,
+  });
+  assert.deepEqual(inspectionModel.changedAnswers(checklist, answers, { a: 'OK' }), [
+    { itemId: 'b', result: 'N/A' },
+  ]);
+});
+
+test('inspection draft editing requires owner, Draft status, and no signature', () => {
+  const record = { status: 'draft', inspector_id: userId };
+  assert.equal(inspectionModel.canEditInspection(record, userId, false), true);
+  assert.equal(inspectionModel.canEditInspection(record, id, false), false);
+  assert.equal(inspectionModel.canEditInspection(record, userId, true), false);
+  assert.equal(
+    inspectionModel.canEditInspection({ ...record, status: 'pending_approval' }, userId, false),
+    false,
+  );
+});
+
+test('inspection list and count apply the same UUID, status, and date filters', async () => {
+  const { database, calls } = fakeDatabase({ hse_chain_inspections: [], count: 2 });
+  const repo = repository.createHSERepository(database);
+  const filter = { search: id, status: 'draft', dateFrom: '2026-01-01', dateTo: '2026-12-31' };
+  await repo.listInspections(filter);
+  assert.equal(await repo.countInspections(filter), 2);
+  assert.equal(calls.filter((call) => call.operation === 'or').length, 2);
+  assert.equal(calls.filter((call) => call.operation === 'gte').length, 2);
+  assert.equal(calls.filter((call) => call.operation === 'lte').length, 2);
+  assert.ok(
+    calls.some((call) => call.operation === 'select' && call.columns.includes('template_version')),
+  );
+});
+
+test('inspection creation rejects scrapped chains and unpublished checklists before insert', async () => {
+  const input = { chain_id: id, template_version: 2, inspection_date: '2026-11-17' };
+  const scrapped = fakeDatabase({ hse_chains: { id, status: 'scrapped' } });
+  await assert.rejects(repository.createHSERepository(scrapped.database).createInspection(input), {
+    code: 'INVALID_STATE',
+  });
+  assert.equal(
+    scrapped.calls.some((call) => call.operation === 'insert'),
+    false,
+  );
+  const draft = fakeDatabase({
+    hse_chains: { id, status: 'active' },
+    hse_chain_checklist_versions: { version: 2, state: 'draft' },
+  });
+  await assert.rejects(repository.createHSERepository(draft.database).createInspection(input), {
+    code: 'INVALID_STATE',
+  });
+  assert.equal(
+    draft.calls.some((call) => call.operation === 'insert'),
+    false,
+  );
+});
+
+test('signature insertion uses authenticated inspector identity on an owned Draft', async () => {
+  const { database, calls } = fakeDatabase({
+    hse_chain_inspections: { id, inspector_id: userId, status: 'draft' },
+    hse_inspection_signatures: null,
+  });
+  await repository.createHSERepository(database).signAsInspector(id);
+  assert.deepEqual(
+    calls.find((call) => call.table === 'hse_inspection_signatures' && call.operation === 'insert')
+      .payload,
+    {
+      inspection_id: id,
+      signer_role: 'inspector',
+      signed_by: userId,
+    },
+  );
+});
+
+test('Draft results and section comments save under inspection UUID with matching checklist version', async () => {
+  const { database, calls } = fakeDatabase({
+    hse_chain_inspections: { id, inspector_id: userId, status: 'draft', template_version: 1 },
+    hse_inspection_signatures: null,
+    hse_chain_checklist_items: { id, template_version: 1 },
+    hse_chain_checklist_sections: { id, template_version: 1 },
+  });
+  const repo = repository.createHSERepository(database);
+  await repo.saveInspectionResult({ inspectionId: id, itemId: id, result: 'Faulty' });
+  await repo.saveInspectionComment({ inspectionId: id, sectionId: id, comments: 'Replace hook' });
+  assert.deepEqual(
+    calls.find(
+      (call) => call.table === 'hse_chain_inspection_results' && call.operation === 'upsert',
+    ).payload,
+    {
+      inspection_id: id,
+      item_id: id,
+      result: 'Faulty',
+    },
+  );
+  assert.deepEqual(
+    calls.find(
+      (call) => call.table === 'hse_chain_inspection_comments' && call.operation === 'upsert',
+    ).payload,
+    {
+      inspection_id: id,
+      section_id: id,
+      comments_corrective_actions: 'Replace hook',
+    },
+  );
+});
+
+test('signed Draft rejects further result edits before upsert', async () => {
+  const { database, calls } = fakeDatabase({
+    hse_chain_inspections: { id, inspector_id: userId, status: 'draft', template_version: 1 },
+    hse_inspection_signatures: { signer_role: 'inspector' },
+  });
+  await assert.rejects(
+    repository
+      .createHSERepository(database)
+      .saveInspectionResult({ inspectionId: id, itemId: id, result: 'OK' }),
+    {
+      code: 'IMMUTABLE_RECORD',
+    },
+  );
+  assert.equal(
+    calls.some((call) => call.operation === 'upsert'),
+    false,
+  );
 });

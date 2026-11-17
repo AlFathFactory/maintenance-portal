@@ -16,6 +16,8 @@ export const hseKeys = {
     ['hse', 'checklist', 'current', state] as const,
   inspections: ['hse', 'inspections'] as const,
   inspectionList: (filter: InspectionListFilter) => ['hse', 'inspections', 'list', filter] as const,
+  inspectionCount: (filter: InspectionListFilter) =>
+    ['hse', 'inspections', 'count', filter] as const,
   inspection: (id: string) => ['hse', 'inspections', 'detail', id] as const,
   signatures: (id: string) => ['hse', 'inspections', 'signatures', id] as const,
 };

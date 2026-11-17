@@ -160,6 +160,15 @@ export function useHSEInspections(filter: InspectionListFilter = {}) {
   });
 }
 
+export function useHSEInspectionCount(filter: InspectionListFilter = {}) {
+  const enabled = useHSEEnabled();
+  return useQuery({
+    queryKey: hseKeys.inspectionCount(filter),
+    queryFn: () => hseRepository.countInspections(filter),
+    enabled,
+  });
+}
+
 export function useHSEInspection(id: string) {
   const enabled = useHSEEnabled();
   return useQuery({

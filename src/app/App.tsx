@@ -39,6 +39,26 @@ const ChecklistManagementPage = lazy(() =>
     default: module.ChecklistManagementPage,
   })),
 );
+const InspectionsPage = lazy(() =>
+  import('../features/hse/inspections/InspectionsPage').then((module) => ({
+    default: module.InspectionsPage,
+  })),
+);
+const InspectionCreatePage = lazy(() =>
+  import('../features/hse/inspections/InspectionCreatePage').then((module) => ({
+    default: module.InspectionCreatePage,
+  })),
+);
+const InspectionFormPage = lazy(() =>
+  import('../features/hse/inspections/InspectionFormPage').then((module) => ({
+    default: module.InspectionFormPage,
+  })),
+);
+const InspectionDetailsPage = lazy(() =>
+  import('../features/hse/inspections/InspectionDetailsPage').then((module) => ({
+    default: module.InspectionDetailsPage,
+  })),
+);
 
 const DashboardPage = lazy(() =>
   import('../features/equipment/DashboardPage').then((module) => ({
@@ -86,11 +106,18 @@ export function App() {
                     <Route path="chains/:id" element={<ChainDetailsPage />} />
                     <Route path="scrapped" element={<ScrappedChainsPage />} />
                     <Route path="checklist" element={<ChecklistManagementPage />} />
+                    <Route path="inspections" element={<InspectionsPage />} />
+                    <Route path="inspections/new" element={<InspectionCreatePage />} />
+                    <Route path="inspections/:id/edit" element={<InspectionFormPage />} />
+                    <Route path="inspections/:id" element={<InspectionDetailsPage />} />
                     {hsePages
                       .slice(1)
                       .filter(
                         (page) =>
-                          page.id !== 'chains' && page.id !== 'scrapped' && page.id !== 'checklist',
+                          page.id !== 'chains' &&
+                          page.id !== 'scrapped' &&
+                          page.id !== 'checklist' &&
+                          page.id !== 'inspections',
                       )
                       .map((page) =>
                         page.engineerOnly ? (

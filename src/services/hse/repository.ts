@@ -16,6 +16,7 @@ import { HSEError, hseError } from './errors';
 import {
   assertDate,
   assertInspectionResult,
+  isUUID,
   assertPositiveInteger,
   assertUUID,
   pageRange,
@@ -382,15 +383,56 @@ export function createHSERepository(database: DB | null): HSERepository {
       let query = db()
         .from('hse_chain_inspections')
         .select(
-          'id,chain_id,chain_tag_snapshot,inspection_date,inspector_id,status,submitted_at,approved_by,approved_at',
+          'id,chain_id,chain_tag_snapshot,inspection_date,inspector_id,template_version,status,submitted_at,approved_by,approved_at',
         );
       if (filter.chainId) {
         assertUUID(filter.chainId);
         query = query.eq('chain_id', filter.chainId);
       }
       if (filter.status) query = query.eq('status', filter.status);
-      const result = await query.order('inspection_date', { ascending: false }).range(from, to);
+      if (filter.search?.trim()) {
+        const search = filter.search.trim();
+        query = isUUID(search)
+          ? query.or(`id.eq.${search},chain_id.eq.${search}`)
+          : query.ilike('chain_tag_snapshot', tagPattern(search));
+      }
+      if (filter.dateFrom) {
+        assertDate(filter.dateFrom);
+        query = query.gte('inspection_date', filter.dateFrom);
+      }
+      if (filter.dateTo) {
+        assertDate(filter.dateTo);
+        query = query.lte('inspection_date', filter.dateTo);
+      }
+      const result = await query
+        .order(filter.sortBy ?? 'inspection_date', { ascending: filter.ascending ?? false })
+        .range(from, to);
       return checked(result.data as InspectionListItem[] | null, result.error) ?? [];
+    },
+    async countInspections(filter = {}) {
+      let query = db().from('hse_chain_inspections').select('id', { count: 'exact', head: true });
+      if (filter.chainId) {
+        assertUUID(filter.chainId);
+        query = query.eq('chain_id', filter.chainId);
+      }
+      if (filter.status) query = query.eq('status', filter.status);
+      if (filter.search?.trim()) {
+        const search = filter.search.trim();
+        query = isUUID(search)
+          ? query.or(`id.eq.${search},chain_id.eq.${search}`)
+          : query.ilike('chain_tag_snapshot', tagPattern(search));
+      }
+      if (filter.dateFrom) {
+        assertDate(filter.dateFrom);
+        query = query.gte('inspection_date', filter.dateFrom);
+      }
+      if (filter.dateTo) {
+        assertDate(filter.dateTo);
+        query = query.lte('inspection_date', filter.dateTo);
+      }
+      const result = await query;
+      checked(result.data, result.error);
+      return result.count ?? 0;
     },
     async getInspection(id) {
       const record = await inspection(id).catch((error) => {

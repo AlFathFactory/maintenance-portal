@@ -9,12 +9,13 @@ import { useHSEChain, useHSEChainLineage, useHSEInspections } from '../queries';
 import { chainError, chainPath, chainStatus, replacementPath } from './chainPresentation';
 import { ChainForm } from './ChainForm';
 import { ScrapChainDialog } from './ScrapChainDialog';
+import { inspectionEditPath, inspectionPath } from '../inspections/inspectionPresentation';
 import './chains.css';
 
 export function ChainDetailsPage() {
   const { id = '' } = useParams();
   const { t, i18n } = useTranslation();
-  const { isHSEEngineer } = useAuth();
+  const { isHSEEngineer, user } = useAuth();
   const [params, setParams] = useSearchParams();
   const [scrapOpen, setScrapOpen] = useState(false);
   const [historyPage, setHistoryPage] = useState(1);
@@ -62,6 +63,14 @@ export function ChainDetailsPage() {
             </span>
           </div>
           <div className="chain-detail-actions">
+            {chain.status === 'active' && (
+              <Link
+                className="chain-button chain-button-primary"
+                to={`/hse/inspections/new?chainId=${chain.id}`}
+              >
+                {t('inspectionUI.new')}
+              </Link>
+            )}
             {isHSEEngineer && chain.status === 'active' && (
               <>
                 <button
@@ -184,7 +193,12 @@ export function ChainDetailsPage() {
                                 : 'chainUI.inspectionPending',
                           )}
                         </span>
-                        <small dir="ltr">{item.id}</small>
+                        <Link to={inspectionPath(item.id)} dir="ltr">
+                          {item.id}
+                        </Link>
+                        {item.status === 'draft' && item.inspector_id === user?.id && (
+                          <Link to={inspectionEditPath(item.id)}>{t('inspectionUI.continue')}</Link>
+                        )}
                       </li>
                     ))}
                   </ul>
