@@ -11,6 +11,9 @@ import type {
   SectionComment,
   InspectionSignature,
   InspectionListItem,
+  HSEPeriod,
+  InspectionReportingData,
+  InspectionResultRow,
 } from '../../domain/hse';
 import { HSEError, hseError } from './errors';
 import {
@@ -33,6 +36,10 @@ type DB = SupabaseClient;
 function checked<T>(data: T, error: unknown): T {
   if (error) throw hseError(error);
   return data;
+}
+function exactCount(count: number | null): number {
+  if (count === null) throw new HSEError('UNKNOWN_ERROR');
+  return count;
 }
 function required<T>(data: T | null): T {
   if (data === null) throw new HSEError('NOT_FOUND');
@@ -102,7 +109,12 @@ export function createHSERepository(database: DB | null): HSERepository {
     async listChains(filter) {
       const [from, to] = pageRange(filter.offset, filter.limit);
       let query = db().from('hse_chains').select('*');
+      if (filter.chainId) {
+        assertUUID(filter.chainId);
+        query = query.eq('id', filter.chainId);
+      }
       if (filter.status) query = query.eq('status', filter.status);
+      if (filter.replacedOnly) query = query.not('replaces_chain_id', 'is', null);
       if (filter.tagNo?.trim()) query = query.ilike('tag_no', tagPattern(filter.tagNo));
       if (filter.legs) query = query.eq('number_of_legs', filter.legs);
       if (filter.scrappedFrom) {
@@ -120,7 +132,12 @@ export function createHSERepository(database: DB | null): HSERepository {
     },
     async countChains(filter) {
       let query = db().from('hse_chains').select('id', { count: 'exact', head: true });
+      if (filter.chainId) {
+        assertUUID(filter.chainId);
+        query = query.eq('id', filter.chainId);
+      }
       if (filter.status) query = query.eq('status', filter.status);
+      if (filter.replacedOnly) query = query.not('replaces_chain_id', 'is', null);
       if (filter.tagNo?.trim()) query = query.ilike('tag_no', tagPattern(filter.tagNo));
       if (filter.legs) query = query.eq('number_of_legs', filter.legs);
       if (filter.scrappedFrom) {
@@ -133,7 +150,37 @@ export function createHSERepository(database: DB | null): HSERepository {
       }
       const result = await query;
       checked(result.data, result.error);
-      return result.count ?? 0;
+      return exactCount(result.count);
+    },
+    async countInspectionsByChain(ids) {
+      await member();
+      ids.forEach(assertUUID);
+      if (!ids.length) return {};
+      if (ids.length > 100) throw new HSEError('INVALID_INPUT');
+      const head = await db()
+        .from('hse_chain_inspections')
+        .select('chain_id', { count: 'exact', head: true })
+        .in('chain_id', ids);
+      checked(head.data, head.error);
+      const total = exactCount(head.count);
+      if (total > 5_000) return null;
+      const counts = Object.fromEntries(ids.map((id) => [id, 0]));
+      for (let offset = 0; offset < total; offset += 1000) {
+        const page = await db()
+          .from('hse_chain_inspections')
+          .select('chain_id')
+          .in('chain_id', ids)
+          .order('chain_id')
+          .order('id')
+          .range(offset, Math.min(offset + 999, total - 1));
+        const rows = checked(page.data as Array<{ chain_id: string }> | null, page.error) ?? [];
+        rows.forEach((row) => {
+          counts[row.chain_id] = (counts[row.chain_id] ?? 0) + 1;
+        });
+        if (!rows.length) return null;
+      }
+      if (Object.values(counts).reduce((sum, value) => sum + value, 0) !== total) return null;
+      return counts;
     },
     async listChainReplacements(predecessorIds) {
       predecessorIds.forEach(assertUUID);
@@ -410,6 +457,7 @@ export function createHSERepository(database: DB | null): HSERepository {
       }
       const result = await query
         .order(filter.sortBy ?? 'inspection_date', { ascending: filter.ascending ?? false })
+        .order('id', { ascending: true })
         .range(from, to);
       return checked(result.data as InspectionListItem[] | null, result.error) ?? [];
     },
@@ -440,7 +488,111 @@ export function createHSERepository(database: DB | null): HSERepository {
       }
       const result = await query;
       checked(result.data, result.error);
-      return result.count ?? 0;
+      return exactCount(result.count);
+    },
+    async getInspectionReportingData(period: HSEPeriod): Promise<InspectionReportingData> {
+      await member();
+      if (period.from) assertDate(period.from);
+      if (period.to) assertDate(period.to);
+      if (period.from && period.to && period.from > period.to) throw new HSEError('INVALID_INPUT');
+      const filter = { dateFrom: period.from, dateTo: period.to };
+      const total = await repo.countInspections(filter);
+      const inspectionLimit = 500;
+      if (total > inspectionLimit)
+        return {
+          total,
+          inspectionLimit,
+          inspections: null,
+          results: null,
+          checklistItemCounts: null,
+        };
+      const inspections: InspectionListItem[] = [];
+      for (let offset = 0; offset < total; offset += 100) {
+        const page = await repo.listInspections({
+          ...filter,
+          sortBy: 'created_at',
+          ascending: true,
+          offset,
+          limit: 100,
+        });
+        inspections.push(...page);
+      }
+      if (inspections.length !== total || new Set(inspections.map((row) => row.id)).size !== total)
+        return {
+          total,
+          inspectionLimit,
+          inspections: null,
+          results: null,
+          checklistItemCounts: null,
+        };
+      if (total === 0)
+        return { total, inspectionLimit, inspections, results: [], checklistItemCounts: {} };
+
+      const resultLimit = 20_000;
+      const results: InspectionResultRow[] = [];
+      for (let offset = 0; offset < inspections.length; offset += 40) {
+        const ids = inspections.slice(offset, offset + 40).map((row) => row.id);
+        const head = await db()
+          .from('hse_chain_inspection_results')
+          .select('inspection_id', { count: 'exact', head: true })
+          .in('inspection_id', ids);
+        checked(head.data, head.error);
+        const expected = exactCount(head.count);
+        if (results.length + expected > resultLimit)
+          return { total, inspectionLimit, inspections, results: null, checklistItemCounts: null };
+        let loaded = 0;
+        while (loaded < expected) {
+          const page = await db()
+            .from('hse_chain_inspection_results')
+            .select('inspection_id,item_id,result')
+            .in('inspection_id', ids)
+            .order('inspection_id')
+            .order('item_id')
+            .range(loaded, Math.min(loaded + 999, expected - 1));
+          results.push(...(checked(page.data as InspectionResultRow[] | null, page.error) ?? []));
+          loaded += page.data?.length ?? 0;
+          if (!page.data?.length) break;
+        }
+        if (loaded !== expected)
+          return { total, inspectionLimit, inspections, results: null, checklistItemCounts: null };
+      }
+
+      const versions = [...new Set(inspections.map((row) => row.template_version))];
+      const checklistItemCounts: Record<number, number> = {};
+      let itemTotal = 0;
+      for (let offset = 0; offset < versions.length; offset += 40) {
+        const batch = versions.slice(offset, offset + 40);
+        const head = await db()
+          .from('hse_chain_checklist_items')
+          .select('template_version', { count: 'exact', head: true })
+          .in('template_version', batch);
+        checked(head.data, head.error);
+        const expected = exactCount(head.count);
+        itemTotal += expected;
+        if (itemTotal > resultLimit)
+          return { total, inspectionLimit, inspections, results, checklistItemCounts: null };
+        let loaded = 0;
+        while (loaded < expected) {
+          const page = await db()
+            .from('hse_chain_checklist_items')
+            .select('template_version')
+            .in('template_version', batch)
+            .order('template_version')
+            .order('id')
+            .range(loaded, Math.min(loaded + 999, expected - 1));
+          const rows =
+            checked(page.data as Array<{ template_version: number }> | null, page.error) ?? [];
+          rows.forEach((row) => {
+            checklistItemCounts[row.template_version] =
+              (checklistItemCounts[row.template_version] ?? 0) + 1;
+          });
+          loaded += rows.length;
+          if (!rows.length) break;
+        }
+        if (loaded !== expected)
+          return { total, inspectionLimit, inspections, results, checklistItemCounts: null };
+      }
+      return { total, inspectionLimit, inspections, results, checklistItemCounts };
     },
     async getInspection(id) {
       const record = await inspection(id).catch((error) => {

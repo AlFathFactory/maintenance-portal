@@ -4,6 +4,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import type { InspectionListFilter, InspectionStatus } from '../../../domain/hse';
 import { formatDate } from '../../../shared/date';
 import { ErrorMessage } from '../../../shared/ui/ErrorMessage';
+import { isUUID } from '../../../services/hse/validation';
 import { useAuth } from '../../auth/AuthProvider';
 import { useHSEInspectionCount, useHSEInspections } from '../queries';
 import {
@@ -25,10 +26,13 @@ export function InspectionsPage() {
   const [status, setStatus] = useState<InspectionStatus | ''>('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [inspectorInput, setInspectorInput] = useState('');
   const [sort, setSort] = useState<'newest' | 'oldest' | 'status'>('newest');
   const [page, setPage] = useState(1);
+  const validInspector = !inspectorInput.trim() || isUUID(inspectorInput.trim());
   const base: InspectionListFilter = {
     chainId,
+    inspectorId: validInspector ? inspectorInput.trim() || undefined : undefined,
     status: status || undefined,
     search: search.trim() || undefined,
     dateFrom: dateFrom || undefined,
@@ -41,8 +45,8 @@ export function InspectionsPage() {
     offset: (page - 1) * inspectionPageSize,
     limit: inspectionPageSize,
   };
-  const list = useHSEInspections(filter);
-  const count = useHSEInspectionCount(base);
+  const list = useHSEInspections(filter, validInspector);
+  const count = useHSEInspectionCount(base, validInspector);
   const total = useHSEInspectionCount({});
   const drafts = useHSEInspectionCount({ status: 'draft' });
   const pending = useHSEInspectionCount({ status: 'pending_approval' });
@@ -119,6 +123,18 @@ export function InspectionsPage() {
             </select>
           </label>
           <label>
+            {t('approvalUI.inspectorFilter')}
+            <input
+              type="text"
+              dir="ltr"
+              value={inspectorInput}
+              onChange={(event) => {
+                setInspectorInput(event.target.value);
+                reset();
+              }}
+            />
+          </label>
+          <label>
             {t('inspectionUI.from')}
             <input
               type="date"
@@ -156,6 +172,7 @@ export function InspectionsPage() {
             </select>
           </label>
         </div>
+        {!validInspector && <p role="alert">{t('approvalUI.invalidInspector')}</p>}
         {chainId && (
           <div className="inspection-filter-chip">
             {t('inspectionUI.chainId')}: <span dir="ltr">{chainId}</span>
@@ -170,7 +187,7 @@ export function InspectionsPage() {
             </button>
           </div>
         )}
-        {(list.isPending || count.isPending) && (
+        {validInspector && (list.isPending || count.isPending) && (
           <p className="inspection-state" role="status">
             {t('inspectionUI.loading')}
           </p>
@@ -189,7 +206,7 @@ export function InspectionsPage() {
             retry={() => void count.refetch()}
           />
         )}
-        {list.data && count.data !== undefined && (
+        {validInspector && list.data && count.data !== undefined && (
           <>
             <p className="inspection-count">{t('inspectionUI.records', { count: count.data })}</p>
             {list.data.length === 0 ? (

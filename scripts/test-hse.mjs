@@ -17,6 +17,10 @@ let queryKeys;
 let checklistModel;
 let inspectionModel;
 let approvalModel;
+let dateRanges;
+let reportingModel;
+let exportCsv;
+let navigation;
 
 before(async () => {
   for (const [name, input] of [
@@ -27,6 +31,10 @@ before(async () => {
     ['checklistModel', 'src/features/hse/checklist/checklistModel.ts'],
     ['inspectionModel', 'src/features/hse/inspections/inspectionModel.ts'],
     ['approvalModel', 'src/features/hse/approvals/approvalModel.ts'],
+    ['dateRanges', 'src/features/hse/analytics/dateRanges.ts'],
+    ['reportingModel', 'src/features/hse/analytics/reportingModel.ts'],
+    ['exportCsv', 'src/features/hse/reports/exportCsv.ts'],
+    ['navigation', 'src/features/hse/navigation.ts'],
   ]) {
     const bundle = await rolldown({ input });
     await bundle.write({ dir: output, format: 'cjs' });
@@ -39,6 +47,10 @@ before(async () => {
   checklistModel = require(path.join(output, 'checklistModel.js'));
   inspectionModel = require(path.join(output, 'inspectionModel.js'));
   approvalModel = require(path.join(output, 'approvalModel.js'));
+  dateRanges = require(path.join(output, 'dateRanges.js'));
+  reportingModel = require(path.join(output, 'reportingModel.js'));
+  exportCsv = require(path.join(output, 'exportCsv.js'));
+  navigation = require(path.join(output, 'navigation.js'));
 });
 after(() => fs.rmSync(output, { recursive: true, force: true }));
 
@@ -81,12 +93,20 @@ function fakeDatabase(rows = {}, role = 'hse_engineer') {
           calls.push({ table, operation: 'in', column, value });
           return this;
         },
+        not(column, operator, value) {
+          calls.push({ table, operation: 'not', column, operator, value });
+          return this;
+        },
         order(column) {
           calls.push({ table, operation: 'order', column });
           return this;
         },
-        range() {
-          return Promise.resolve({ data: rows[table] ?? [], error: null });
+        range(from, to) {
+          const data = rows[table] ?? [];
+          return Promise.resolve({
+            data: Array.isArray(data) ? data.slice(from, to + 1) : data,
+            error: null,
+          });
         },
         insert(payload) {
           calls.push({ table, operation: 'insert', payload });
@@ -116,7 +136,7 @@ function fakeDatabase(rows = {}, role = 'hse_engineer') {
         then(resolve) {
           return Promise.resolve({
             data: rows[table] ?? [],
-            count: rows.count ?? null,
+            count: rows.counts?.[table] ?? rows.count ?? null,
             error: null,
           }).then(resolve);
         },
@@ -971,4 +991,158 @@ test('recovery interprets persisted signatures and approved state before retryin
     approvalModel.approvalRecovery(approvalDetails('pending_approval', 'Faulty', id), userId, true),
     'state_changed',
   );
+});
+
+test('reporting periods use Cairo calendar dates and reject impossible custom ranges', () => {
+  assert.equal(dateRanges.cairoToday(new Date('2026-11-16T22:30:00Z')), '2026-11-17');
+  assert.deepEqual(dateRanges.resolvePeriod('last7', {}, '2026-01-03'), {
+    from: '2025-12-28',
+    to: '2026-01-03',
+  });
+  assert.deepEqual(dateRanges.resolvePeriod('month', {}, '2026-11-17'), {
+    from: '2026-11-01',
+    to: '2026-11-17',
+  });
+  assert.equal(dateRanges.resolvePeriod('custom', { from: '2026-02-30', to: '2026-03-01' }), null);
+  assert.equal(dateRanges.resolvePeriod('custom', { from: '2026-03-02', to: '2026-03-01' }), null);
+  assert.equal(dateRanges.trendBucket('2026-01-01', 'week'), '2025-12-29');
+});
+
+test('reporting model counts checkpoint results separately from distinct Faulty inspections', () => {
+  const second = '33333333-3333-4333-8333-333333333333';
+  const data = {
+    total: 2,
+    inspectionLimit: 500,
+    inspections: [
+      {
+        id,
+        chain_id: id,
+        chain_tag_snapshot: 'TAG-1',
+        inspection_date: '2026-11-16',
+        status: 'approved',
+        template_version: 1,
+      },
+      {
+        id: second,
+        chain_id: second,
+        chain_tag_snapshot: 'TAG-1',
+        inspection_date: '2026-11-17',
+        status: 'draft',
+        template_version: 1,
+      },
+    ],
+    results: [
+      { inspection_id: id, item_id: 'a', result: 'Faulty' },
+      { inspection_id: id, item_id: 'b', result: 'Faulty' },
+      { inspection_id: second, item_id: 'a', result: 'OK' },
+    ],
+    checklistItemCounts: { 1: 2 },
+  };
+  const view = reportingModel.buildReportingView(data, 'day');
+  assert.deepEqual(view.findings, {
+    OK: 1,
+    Faulty: 2,
+    'N/A': 0,
+    unanswered: 1,
+    faultyInspections: 1,
+  });
+  assert.equal(
+    view.trend.reduce((sum, point) => sum + point.inspections, 0),
+    2,
+  );
+  assert.equal(
+    view.trend.reduce((sum, point) => sum + point.faultyCheckpoints, 0),
+    2,
+  );
+  assert.equal(view.status.approved, 1);
+  assert.equal(view.status.draft, 1);
+});
+
+test('reporting data refuses to present a partial trend beyond its inspection limit', async () => {
+  const { database, calls } = fakeDatabase({ counts: { hse_chain_inspections: 501 } });
+  const data = await repository
+    .createHSERepository(database)
+    .getInspectionReportingData({ from: '2026-01-01', to: '2026-12-31' });
+  assert.equal(data.total, 501);
+  assert.equal(data.inspections, null);
+  assert.equal(
+    calls.some((call) => call.table === 'hse_chain_inspection_results'),
+    false,
+  );
+});
+
+test('reporting data retrieves complete bounded inspection, result, and checklist populations', async () => {
+  const second = '33333333-3333-4333-8333-333333333333';
+  const { database } = fakeDatabase({
+    hse_chain_inspections: [
+      { id, template_version: 1, inspection_date: '2026-11-16', status: 'approved' },
+      { id: second, template_version: 1, inspection_date: '2026-11-17', status: 'draft' },
+    ],
+    hse_chain_inspection_results: [{ inspection_id: id, item_id: 'a', result: 'Faulty' }],
+    hse_chain_checklist_items: [{ template_version: 1 }, { template_version: 1 }],
+    counts: {
+      hse_chain_inspections: 2,
+      hse_chain_inspection_results: 1,
+      hse_chain_checklist_items: 2,
+    },
+  });
+  const data = await repository
+    .createHSERepository(database)
+    .getInspectionReportingData({ from: '2026-11-01', to: '2026-11-30' });
+  assert.equal(data.inspections.length, 2);
+  assert.equal(data.results.length, 1);
+  assert.deepEqual(data.checklistItemCounts, { 1: 2 });
+});
+
+test('replacement report and per-chain inspection counts use physical UUIDs', async () => {
+  const second = '33333333-3333-4333-8333-333333333333';
+  const { database, calls } = fakeDatabase({
+    hse_chains: [{ id: second, tag_no: 'TAG-1', replaces_chain_id: id }],
+    hse_chain_inspections: [{ chain_id: id }, { chain_id: second }, { chain_id: second }],
+    counts: { hse_chain_inspections: 3 },
+  });
+  const repo = repository.createHSERepository(database);
+  await repo.listChains({ replacedOnly: true, limit: 20 });
+  await repo.listChains({ chainId: second, limit: 20 });
+  assert.ok(calls.some((call) => call.operation === 'not' && call.column === 'replaces_chain_id'));
+  assert.ok(
+    calls.some((call) => call.operation === 'eq' && call.column === 'id' && call.value === second),
+  );
+  assert.deepEqual(await repo.countInspectionsByChain([id, second]), { [id]: 1, [second]: 2 });
+});
+
+test('CSV export escapes quotes, line breaks, Arabic, and spreadsheet formulas', () => {
+  const csv = exportCsv.csvDocument(
+    ['Name', 'Note'],
+    [
+      ['جنزير', 'A,"B"\nC'],
+      ['=SUM(1,1)', '  +2'],
+      ['@cmd', '-1'],
+    ],
+  );
+  assert.ok(csv.startsWith('\uFEFF"Name","Note"\r\n'));
+  assert.ok(csv.includes('"A,""B""\nC"'));
+  assert.ok(csv.includes('"\'=SUM(1,1)"'));
+  assert.ok(csv.includes('"\'  +2"'));
+  assert.ok(csv.includes('"\'@cmd","\'-1"'));
+});
+
+test('HSE reports navigation is available to both HSE roles while approvals stay Engineer-only', () => {
+  assert.equal(navigation.getHSEPage('/hse/reports')?.id, 'reports');
+  assert.equal(navigation.hsePages.find((page) => page.id === 'reports').engineerOnly, undefined);
+  assert.equal(navigation.hsePages.find((page) => page.id === 'approvals').engineerOnly, true);
+});
+
+test('finding totals become unavailable if result rows exceed version checkpoint population', () => {
+  const data = {
+    total: 1,
+    inspectionLimit: 500,
+    inspections: [{ id, template_version: 1, status: 'draft', inspection_date: '2026-11-17' }],
+    results: [
+      { inspection_id: id, result: 'OK' },
+      { inspection_id: id, result: 'Faulty' },
+    ],
+    checklistItemCounts: { 1: 1 },
+  };
+  assert.equal(reportingModel.buildReportingView(data, 'day').findings, null);
 });

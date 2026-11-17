@@ -36,7 +36,9 @@ export interface ChainLineage {
   successors: Chain[];
 }
 export interface ChainListFilter {
+  chainId?: string;
   status?: ChainStatus;
+  replacedOnly?: boolean;
   tagNo?: string;
   legs?: ChainLegCount;
   scrappedFrom?: string;
@@ -45,6 +47,20 @@ export interface ChainListFilter {
   ascending?: boolean;
   offset?: number;
   limit?: number;
+}
+
+export interface HSEPeriod {
+  from?: string;
+  to?: string;
+}
+export type HSETrendGrouping = 'day' | 'week' | 'month';
+export type InspectionResultRow = Pick<CheckpointResult, 'inspection_id' | 'item_id' | 'result'>;
+export interface InspectionReportingData {
+  total: number;
+  inspectionLimit: number;
+  inspections: InspectionListItem[] | null;
+  results: InspectionResultRow[] | null;
+  checklistItemCounts: Record<number, number> | null;
 }
 
 export type ChecklistVersionState = 'draft' | 'published' | 'archived';

@@ -8,14 +8,8 @@ import { AppShell } from './AppShell';
 import { RequireAdmin } from '../features/auth/RequireAdmin';
 import { AccessDeniedPage } from '../features/auth/AccessDeniedPage';
 import { RequireHSE } from '../features/auth/RequireHSE';
-import { hsePages } from '../features/hse/navigation';
 
 const HSEShell = lazy(() => import('./HSEShell').then((module) => ({ default: module.HSEShell })));
-const HSEPlaceholderPage = lazy(() =>
-  import('../features/hse/HSEPlaceholderPage').then((module) => ({
-    default: module.HSEPlaceholderPage,
-  })),
-);
 const ChainInventoryPage = lazy(() =>
   import('../features/hse/chains/ChainInventoryPage').then((module) => ({
     default: module.ChainInventoryPage,
@@ -69,6 +63,16 @@ const EngineerReviewPage = lazy(() =>
     default: module.EngineerReviewPage,
   })),
 );
+const HSEDashboardPage = lazy(() =>
+  import('../features/hse/dashboard/HSEDashboardPage').then((module) => ({
+    default: module.HSEDashboardPage,
+  })),
+);
+const HSEReportsPage = lazy(() =>
+  import('../features/hse/reports/HSEReportsPage').then((module) => ({
+    default: module.HSEReportsPage,
+  })),
+);
 
 const DashboardPage = lazy(() =>
   import('../features/equipment/DashboardPage').then((module) => ({
@@ -108,7 +112,7 @@ export function App() {
                 <Route path="access-denied" element={<AccessDeniedPage />} />
                 <Route element={<RequireHSE />}>
                   <Route path="hse" element={<HSEShell />}>
-                    <Route index element={<HSEPlaceholderPage page={hsePages[0]} />} />
+                    <Route index element={<HSEDashboardPage />} />
                     <Route path="chains" element={<ChainInventoryPage />} />
                     <Route element={<RequireHSE allowedRoles={['hse_engineer']} />}>
                       <Route path="chains/new" element={<NewChainPage />} />
@@ -120,36 +124,11 @@ export function App() {
                     <Route path="inspections/new" element={<InspectionCreatePage />} />
                     <Route path="inspections/:id/edit" element={<InspectionFormPage />} />
                     <Route path="inspections/:id" element={<InspectionDetailsPage />} />
+                    <Route path="reports" element={<HSEReportsPage />} />
                     <Route element={<RequireHSE allowedRoles={['hse_engineer']} />}>
                       <Route path="approvals" element={<PendingApprovalsPage />} />
                       <Route path="approvals/:id" element={<EngineerReviewPage />} />
                     </Route>
-                    {hsePages
-                      .slice(1)
-                      .filter(
-                        (page) =>
-                          page.id !== 'chains' &&
-                          page.id !== 'scrapped' &&
-                          page.id !== 'checklist' &&
-                          page.id !== 'inspections' &&
-                          page.id !== 'approvals',
-                      )
-                      .map((page) =>
-                        page.engineerOnly ? (
-                          <Route
-                            key={page.id}
-                            element={<RequireHSE allowedRoles={['hse_engineer']} />}
-                          >
-                            <Route path={page.path} element={<HSEPlaceholderPage page={page} />} />
-                          </Route>
-                        ) : (
-                          <Route
-                            key={page.id}
-                            path={page.path}
-                            element={<HSEPlaceholderPage page={page} />}
-                          />
-                        ),
-                      )}
                     <Route
                       path="*"
                       element={

@@ -24,11 +24,14 @@ import type {
   SaveInspectionResultInput,
   SaveInspectionCommentInput,
   InspectionSignature,
+  HSEPeriod,
+  InspectionReportingData,
 } from '../domain/hse';
 
 export interface HSERepository {
   listChains(filter: ChainListFilter): Promise<Chain[]>;
   countChains(filter: Partial<ChainListFilter>): Promise<number>;
+  countInspectionsByChain(ids: string[]): Promise<Record<string, number> | null>;
   listChainReplacements(predecessorIds: string[]): Promise<Chain[]>;
   getChain(id: string): Promise<Chain | null>;
   createChain(input: ChainCreateInput): Promise<Chain>;
@@ -48,6 +51,7 @@ export interface HSERepository {
 
   listInspections(filter?: InspectionListFilter): Promise<InspectionListItem[]>;
   countInspections(filter?: InspectionListFilter): Promise<number>;
+  getInspectionReportingData(period: HSEPeriod): Promise<InspectionReportingData>;
   getInspection(id: string): Promise<InspectionDetails | null>;
   createInspection(input: InspectionCreateInput): Promise<ChainInspection>;
   updateInspectionDraft(id: string, input: InspectionDraftUpdateInput): Promise<ChainInspection>;

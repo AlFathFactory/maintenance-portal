@@ -13,6 +13,7 @@ import type {
   InspectionDraftUpdateInput,
   SaveInspectionResultInput,
   SaveInspectionCommentInput,
+  HSEPeriod,
 } from '../../domain/hse';
 import { useAuth } from '../auth/AuthProvider';
 import { hseRepository } from '../../services/hse';
@@ -34,12 +35,12 @@ export function useHSEChains(filter: ChainListFilter, active = true) {
   });
 }
 
-export function useHSEChainCount(filter: Partial<ChainListFilter>) {
+export function useHSEChainCount(filter: Partial<ChainListFilter>, active = true) {
   const enabled = useHSEEnabled();
   return useQuery({
     queryKey: hseKeys.chainCount(filter),
     queryFn: () => hseRepository.countChains(filter),
-    enabled,
+    enabled: enabled && active,
   });
 }
 
@@ -48,6 +49,15 @@ export function useHSEChainReplacements(ids: string[]) {
   return useQuery({
     queryKey: hseKeys.chainReplacements(ids),
     queryFn: () => hseRepository.listChainReplacements(ids),
+    enabled: enabled && ids.length > 0,
+  });
+}
+
+export function useHSEChainInspectionCounts(ids: string[]) {
+  const enabled = useHSEEnabled();
+  return useQuery({
+    queryKey: hseKeys.chainInspectionCounts(ids),
+    queryFn: () => hseRepository.countInspectionsByChain(ids),
     enabled: enabled && ids.length > 0,
   });
 }
@@ -151,21 +161,30 @@ export function useHSEChecklistActions() {
   };
 }
 
-export function useHSEInspections(filter: InspectionListFilter = {}) {
+export function useHSEInspections(filter: InspectionListFilter = {}, active = true) {
   const enabled = useHSEEnabled();
   return useQuery({
     queryKey: hseKeys.inspectionList(filter),
     queryFn: () => hseRepository.listInspections(filter),
-    enabled,
+    enabled: enabled && active,
   });
 }
 
-export function useHSEInspectionCount(filter: InspectionListFilter = {}) {
+export function useHSEInspectionCount(filter: InspectionListFilter = {}, active = true) {
   const enabled = useHSEEnabled();
   return useQuery({
     queryKey: hseKeys.inspectionCount(filter),
     queryFn: () => hseRepository.countInspections(filter),
-    enabled,
+    enabled: enabled && active,
+  });
+}
+
+export function useHSEInspectionReportingData(period: HSEPeriod, active = true) {
+  const enabled = useHSEEnabled();
+  return useQuery({
+    queryKey: hseKeys.reporting(period),
+    queryFn: () => hseRepository.getInspectionReportingData(period),
+    enabled: enabled && active,
   });
 }
 
@@ -189,7 +208,10 @@ export function useHSESignatures(id: string) {
 
 export function useHSEInspectionActions() {
   const queryClient = useQueryClient();
-  const refresh = () => queryClient.invalidateQueries({ queryKey: hseKeys.inspections });
+  const refresh = () => {
+    void queryClient.invalidateQueries({ queryKey: hseKeys.inspections });
+    void queryClient.invalidateQueries({ queryKey: hseKeys.chainInspectionCountsAll });
+  };
   return {
     create: useMutation({
       mutationFn: (input: InspectionCreateInput) => hseRepository.createInspection(input),

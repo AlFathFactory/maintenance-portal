@@ -1,4 +1,4 @@
-import type { ChainListFilter, InspectionListFilter } from '../../domain/hse';
+import type { ChainListFilter, InspectionListFilter, HSEPeriod } from '../../domain/hse';
 import type { HSERole } from '../auth/hseMembership';
 
 export const hseKeys = {
@@ -7,6 +7,8 @@ export const hseKeys = {
   chainList: (filter: ChainListFilter) => ['hse', 'chains', 'list', filter] as const,
   chainCount: (filter: Partial<ChainListFilter>) => ['hse', 'chains', 'count', filter] as const,
   chainReplacements: (ids: string[]) => ['hse', 'chains', 'replacements', ids] as const,
+  chainInspectionCountsAll: ['hse', 'chains', 'inspection-counts'] as const,
+  chainInspectionCounts: (ids: string[]) => ['hse', 'chains', 'inspection-counts', ids] as const,
   chain: (id: string) => ['hse', 'chains', 'detail', id] as const,
   lineage: (id: string) => ['hse', 'chains', 'lineage', id] as const,
   checklist: ['hse', 'checklist'] as const,
@@ -20,6 +22,7 @@ export const hseKeys = {
     ['hse', 'inspections', 'count', filter] as const,
   inspection: (id: string) => ['hse', 'inspections', 'detail', id] as const,
   signatures: (id: string) => ['hse', 'inspections', 'signatures', id] as const,
+  reporting: (period: HSEPeriod) => ['hse', 'inspections', 'reporting', period] as const,
 };
 
 export function canLoadHSE(userId: string | null, role: HSERole | null, loading: boolean): boolean {

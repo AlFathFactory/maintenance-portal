@@ -1,5 +1,5 @@
 export type HSEPageId =
-  'dashboard' | 'chains' | 'scrapped' | 'inspections' | 'approvals' | 'checklist';
+  'dashboard' | 'chains' | 'scrapped' | 'inspections' | 'approvals' | 'checklist' | 'reports';
 
 export interface HSEPageDefinition {
   id: HSEPageId;
@@ -53,6 +53,13 @@ export const hsePages: readonly HSEPageDefinition[] = [
     to: '/hse/checklist',
     labelKey: 'hse.checklist',
     descriptionKey: 'hse.checklistDescription',
+  },
+  {
+    id: 'reports',
+    path: 'reports',
+    to: '/hse/reports',
+    labelKey: 'hse.reports',
+    descriptionKey: 'hse.reportsDescription',
   },
 ];
 

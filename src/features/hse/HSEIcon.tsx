@@ -54,6 +54,12 @@ export function HSEIcon({ name }: { name: HSEPageId }) {
           <path d="m8 9 1 1 2-2M13 9h4M8 16h9M8 13h9" />
         </>
       )}
+      {name === 'reports' && (
+        <>
+          <path d="M4 20V10M10 20V5M16 20v-8M22 20V3" />
+          <path d="M2 20h20" />
+        </>
+      )}
     </svg>
   );
 }
