@@ -8,9 +8,10 @@
     "typecheck": "tsc --noEmit",
     "build": "npm run typecheck && vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "format": "prettier --write src vite.config.ts scripts README.md",
-    "format:check": "prettier --check src vite.config.ts scripts README.md",
-    "test:hse": "node --test scripts/test-hse.mjs"
+    "format": "prettier --write src vite.config.ts playwright.config.ts tests scripts README.md",
+    "format:check": "prettier --check src vite.config.ts playwright.config.ts tests scripts README.md",
+    "test:hse": "node --test scripts/test-hse.mjs",
+    "test:browser": "playwright test"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.118.0",
@@ -24,6 +25,7 @@
     "react-router-dom": "7.18.5"
   },
   "devDependencies": {
+    "@playwright/test": "1.65.1",
     "@types/qrcode": "1.5.6",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
