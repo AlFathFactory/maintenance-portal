@@ -1,0 +1,76 @@
+@import '../inspections/inspections.css';
+
+.approval-page {
+  display: grid;
+  gap: 1.25rem;
+}
+.approval-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.approval-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8rem;
+  width: fit-content;
+  padding: 0.8rem 1.2rem;
+  border: 1px solid #d9e4e7;
+  border-radius: 0.7rem;
+  background: #fff;
+}
+.approval-count strong {
+  font-size: 1.7rem;
+  color: #075268;
+}
+.approval-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.8rem;
+}
+.approval-filters label,
+.approval-inspector-filter label {
+  display: grid;
+  gap: 0.35rem;
+  font-weight: 600;
+}
+.approval-page input:not([type='checkbox']),
+.approval-page select {
+  width: 100%;
+  min-width: 0;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid #afc2c9;
+  border-radius: 0.4rem;
+  background: #fff;
+  color: inherit;
+  font: inherit;
+}
+.approval-inspector-filter {
+  display: flex;
+  gap: 0.7rem;
+  align-items: end;
+  flex-wrap: wrap;
+  margin: 1rem 0;
+}
+.approval-inspector-filter label {
+  flex: 1 1 230px;
+}
+.approval-error {
+  color: #8e2727;
+  background: #fff0ee;
+  border-inline-start: 3px solid #b83a32;
+  border-radius: 0.4rem;
+  padding: 0.8rem 1rem;
+}
+.approval-filter-active {
+  overflow-wrap: anywhere;
+}
+.approval-actions {
+  display: grid;
+  gap: 0.8rem;
+}
+.approval-actions p {
+  margin: 0;
+}

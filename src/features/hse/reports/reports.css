@@ -1,0 +1,61 @@
+.hse-reports {
+  display: grid;
+  gap: 1.2rem;
+}
+.hse-report-toolbar {
+  display: grid;
+  gap: 1rem;
+}
+.hse-report-toolbar > label,
+.hse-report-filters label {
+  display: grid;
+  gap: 0.35rem;
+  font-weight: 600;
+}
+.hse-report-toolbar > label {
+  max-width: 320px;
+}
+.hse-report-toolbar select,
+.hse-report-filters input,
+.hse-report-filters select {
+  padding: 0.55rem 0.65rem;
+  border: 1px solid #afc2c9;
+  border-radius: 0.4rem;
+  background: #fff;
+  font: inherit;
+  min-width: 0;
+}
+.hse-report-filters {
+  display: flex;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  align-items: end;
+}
+.hse-report-filters label {
+  flex: 1 1 180px;
+}
+.hse-report-filters p {
+  color: #9a2525;
+}
+.hse-report-findings {
+  display: grid;
+  gap: 1rem;
+}
+.hse-report-findings .hse-findings-grid > div {
+  display: grid;
+  gap: 0.4rem;
+  background: #f2f7f8;
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+.hse-report-findings .hse-findings-grid strong {
+  font-size: 1.5rem;
+}
+.hse-reports .inspection-table {
+  min-width: 760px;
+}
+@media (max-width: 700px) {
+  .hse-reports .inspection-table {
+    min-width: 0;
+  }
+}

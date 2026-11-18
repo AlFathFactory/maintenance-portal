@@ -1,0 +1,9 @@
+# HSE Engineer approval (Phase 7)
+
+The engineer-only `/#/hse/approvals` list reads `pending_approval` inspections through the Phase 3 HSE repository. Search, date and inspector UUID filters, sorting, counts, and pagination run on the server. Per-row Faulty counts are omitted because the existing list contract has no efficient aggregate; the review page calculates findings from the inspection's saved results.
+
+`/#/hse/approvals/:id` reuses the Phase 6 read-only inspection record. It shows the immutable chain snapshot, the inspection's own checklist version, results, section comments, both signatures, and approval metadata. Faulty findings remain visible before and after administrative approval. Approval does **not** certify the physical chain as safe for use or change its status.
+
+An active HSE Engineer explicitly confirms and inserts their authenticated-account attestation through `signAsEngineer`. The backend supplies the attestation text, timestamp, and method. A separate confirmation calls `approveInspection`, which invokes `hse_approve_chain_inspection(p_inspection_id uuid)`. The RPC requires the same Engineer account that signed. The UI refreshes the record before either irreversible action and after uncertain outcomes; a saved Engineer signature is never inserted again during approval retry. Supabase RLS, triggers, uniqueness constraints, and the approval RPC remain authoritative. Phase 7 adds no schema objects or Maintenance changes.
+
+The connected project had no pending or approved inspections at implementation time, so live authenticated signing and approval were not exercised. Backend functions and current counts were inspected read-only. Checklist publishing and transaction-safe manual reordering remain unavailable from the browser as documented in `HSE_DATA_LAYER.md` and `HSE_CHECKLIST_MANAGEMENT.md`.

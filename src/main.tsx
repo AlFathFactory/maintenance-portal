@@ -4,6 +4,7 @@ import { App } from './app/App';
 import './i18n';
 import './styles/globals.css';
 import './app/AppShell.css';
+import './features/hse/hse.css';
 import './shared/styles/buttons.css';
 import './features/equipment/dashboard.css';
 import './shared/styles/components.css';
