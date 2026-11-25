@@ -171,6 +171,7 @@ export interface InspectionDetails {
   results: CheckpointResult[];
   comments: SectionComment[];
   signatures: InspectionSignature[];
+  actorEmails: Record<string, string>;
 }
 export interface InspectionListFilter {
   chainId?: string;

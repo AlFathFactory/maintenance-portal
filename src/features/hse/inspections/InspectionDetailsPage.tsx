@@ -15,9 +15,23 @@ export function InspectionDetailsPage() {
   const query = useHSEInspection(id);
   const details = query.data;
   return (
-    <section className="hse-page inspection-page" aria-labelledby="hse-page-title">
-      <Link to="/hse/inspections" className="inspection-back">
-        ← {t('inspectionUI.back')}
+    <section
+      className="hse-page inspection-page inspection-details-view"
+      aria-labelledby="hse-page-title"
+    >
+      <Link to="/hse/inspections" className="inspection-button inspection-details-back">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M19 12H5m7 7-7-7 7-7" />
+        </svg>
+        {t('inspectionUI.back')}
       </Link>
       {query.isPending && <p role="status">{t('inspectionUI.loading')}</p>}
       {query.isError && (
@@ -26,30 +40,36 @@ export function InspectionDetailsPage() {
       {query.data === null && <ErrorMessage error={t('inspectionUI.notFound')} />}
       {details && (
         <>
-          <InspectionRecord details={details} />
-          <div className="inspection-form-actions">
-            <Link className="inspection-button" to={chainPath(details.inspection.chain_id)}>
-              {t('inspectionUI.chain')}
-            </Link>
-            {details.inspection.status === 'draft' &&
-              details.inspection.inspector_id === user?.id &&
-              !details.signatures.some((signature) => signature.signer_role === 'inspector') && (
-                <Link
-                  className="inspection-button inspection-primary"
-                  to={inspectionEditPath(details.inspection.id)}
-                >
-                  {t('inspectionUI.continue')}
+          <InspectionRecord
+            details={details}
+            actions={
+              <div className="inspection-record-actions">
+                <Link className="inspection-button" to={chainPath(details.inspection.chain_id)}>
+                  {t('inspectionUI.chain')}
                 </Link>
-              )}
-            {isHSEEngineer && details.inspection.status === 'pending_approval' && (
-              <Link
-                className="inspection-button inspection-primary"
-                to={`/hse/approvals/${details.inspection.id}`}
-              >
-                {t('approvalUI.review')}
-              </Link>
-            )}
-          </div>
+                {details.inspection.status === 'draft' &&
+                  details.inspection.inspector_id === user?.id &&
+                  !details.signatures.some(
+                    (signature) => signature.signer_role === 'inspector',
+                  ) && (
+                    <Link
+                      className="inspection-button inspection-primary"
+                      to={inspectionEditPath(details.inspection.id)}
+                    >
+                      {t('inspectionUI.continue')}
+                    </Link>
+                  )}
+                {isHSEEngineer && details.inspection.status === 'pending_approval' && (
+                  <Link
+                    className="inspection-button inspection-primary"
+                    to={`/hse/approvals/${details.inspection.id}`}
+                  >
+                    {t('approvalUI.review')}
+                  </Link>
+                )}
+              </div>
+            }
+          />
         </>
       )}
     </section>
