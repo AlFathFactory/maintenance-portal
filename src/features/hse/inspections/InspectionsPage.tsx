@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import type { InspectionListFilter, InspectionStatus } from '../../../domain/hse';
 import { formatDate } from '../../../shared/date';
 import { ErrorMessage } from '../../../shared/ui/ErrorMessage';
@@ -17,6 +17,7 @@ import './inspections.css';
 
 export function InspectionsPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const chainId = params.get('chainId') ?? undefined;
   const [search, setSearch] = useState('');
@@ -237,7 +238,15 @@ export function InspectionsPage() {
                   </thead>
                   <tbody>
                     {list.data.map((item) => (
-                      <tr key={item.id}>
+                      <tr
+                        key={item.id}
+                        className="inspection-clickable-row"
+                        onClick={(event) => {
+                          if (!(event.target as HTMLElement).closest('a')) {
+                            navigate(inspectionPath(item.id));
+                          }
+                        }}
+                      >
                         <td data-label={t('inspectionUI.chainTag')}>
                           <Link className="inspection-chain-link" to={inspectionPath(item.id)}>
                             <strong dir="auto">{item.chain_tag_snapshot}</strong>

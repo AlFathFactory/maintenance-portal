@@ -213,6 +213,14 @@
 .inspection-table th {
   white-space: nowrap;
 }
+.inspection-clickable-row {
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+.inspection-clickable-row:hover,
+.inspection-clickable-row:focus-within {
+  background: #f0faf7;
+}
 .inspection-chain-link {
   color: #087b70;
   font-weight: 800;
@@ -499,8 +507,13 @@
     display: block;
   }
   .inspection-table tr {
-    border-bottom: 1px solid #b6c7ce;
-    padding: 0.6rem 0;
+    border: 1px solid #d9e7e4;
+    border-radius: 0.65rem;
+    padding: 0.6rem 0.75rem;
+  }
+  .inspection-table tbody {
+    display: grid;
+    gap: 0.7rem;
   }
   .inspection-table td {
     display: flex;
