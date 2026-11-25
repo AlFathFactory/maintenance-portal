@@ -501,6 +501,13 @@ export const ar = {
     collapse: 'طي القسم {{name}}',
   },
   chainUI: {
+    createIntro: 'سجّل جنزير رفع جديدًا وحدد مواصفات تشغيله.',
+    registration: 'تسجيل الجنزير',
+    registrationType: 'نوع التسجيل',
+    registrationHint: 'حدد طريقة إضافة الجنزير إلى السجل، ثم أدخل بياناته.',
+    newModeHint: 'سجّل جنزيرًا برقم جديد.',
+    replacementModeHint: 'اربط هذا الجنزير بجنزير تم تكهينه.',
+    technicalHint: 'أدخل رقم الجنزير ومواصفاته الفنية وبيانات تشغيله.',
     inventory: 'سجل الجنازير',
     archive: 'أرشيف الجنازير المتكهّنة',
     details: 'تفاصيل الجنزير',
