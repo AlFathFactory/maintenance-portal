@@ -5,10 +5,8 @@ import type { InspectionListFilter, InspectionStatus } from '../../../domain/hse
 import { formatDate } from '../../../shared/date';
 import { ErrorMessage } from '../../../shared/ui/ErrorMessage';
 import { isUUID } from '../../../services/hse/validation';
-import { useAuth } from '../../auth/AuthProvider';
 import { useHSEInspectionCount, useHSEInspections } from '../queries';
 import {
-  inspectionEditPath,
   inspectionError,
   inspectionNewPath,
   inspectionPageSize,
@@ -19,7 +17,6 @@ import './inspections.css';
 
 export function InspectionsPage() {
   const { t } = useTranslation();
-  const { user } = useAuth();
   const [params, setParams] = useSearchParams();
   const chainId = params.get('chainId') ?? undefined;
   const [search, setSearch] = useState('');
@@ -67,6 +64,16 @@ export function InspectionsPage() {
           <p>{t('inspectionUI.intro')}</p>
         </div>
         <Link className="inspection-button inspection-primary" to={inspectionNewPath()}>
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            aria-hidden="true"
+          >
+            <path d="M12 5v14M5 12h14" />
+          </svg>
           {t('inspectionUI.new')}
         </Link>
       </div>
@@ -76,8 +83,8 @@ export function InspectionsPage() {
           [t('inspectionUI.draftCount'), drafts],
           [t('inspectionUI.pendingCount'), pending],
           [t('inspectionUI.approvedCount'), approved],
-        ].map(([label, query]) => (
-          <div key={String(label)}>
+        ].map(([label, query], index) => (
+          <div className={`inspection-stat inspection-stat-${index}`} key={String(label)}>
             <span>{label as string}</span>
             <strong>{(query as typeof total).data ?? '—'}</strong>
           </div>
@@ -105,7 +112,7 @@ export function InspectionsPage() {
               }}
             />
           </label>
-          <label>
+          <label className="inspection-select-field">
             {t('inspectionUI.status')}
             <select
               value={status}
@@ -157,7 +164,7 @@ export function InspectionsPage() {
               }}
             />
           </label>
-          <label>
+          <label className="inspection-select-field">
             {t('inspectionUI.sort')}
             <select
               value={sort}
@@ -226,14 +233,15 @@ export function InspectionsPage() {
                       <th>{t('inspectionUI.inspector')}</th>
                       <th>{t('inspectionUI.checklistVersion')}</th>
                       <th>{t('inspectionUI.status')}</th>
-                      <th>{t('chainUI.actions')}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {list.data.map((item) => (
                       <tr key={item.id}>
                         <td data-label={t('inspectionUI.chainTag')}>
-                          <strong dir="auto">{item.chain_tag_snapshot}</strong>
+                          <Link className="inspection-chain-link" to={inspectionPath(item.id)}>
+                            <strong dir="auto">{item.chain_tag_snapshot}</strong>
+                          </Link>
                         </td>
                         <td data-label={t('inspectionUI.chainId')}>
                           <span title={item.chain_id} dir="ltr">
@@ -255,16 +263,6 @@ export function InspectionsPage() {
                           <span className={`inspection-badge inspection-badge-${item.status}`}>
                             {inspectionStatus(item.status, t)}
                           </span>
-                        </td>
-                        <td data-label={t('chainUI.actions')}>
-                          <div className="inspection-actions">
-                            <Link to={inspectionPath(item.id)}>{t('chainUI.view')}</Link>
-                            {item.status === 'draft' && item.inspector_id === user?.id && (
-                              <Link to={inspectionEditPath(item.id)}>
-                                {t('inspectionUI.continue')}
-                              </Link>
-                            )}
-                          </div>
                         </td>
                       </tr>
                     ))}
