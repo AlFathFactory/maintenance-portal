@@ -12,15 +12,7 @@ import type { User } from '@supabase/supabase-js';
 import { env } from '../../config/env';
 import { supabase } from '../../services/supabaseClient';
 import { getHSEMembership, type HSERole } from './hseMembership';
-
-interface Authorization {
-  revision: number;
-  isAdmin: boolean;
-  hseRole: HSERole | null;
-  hseInactive: boolean;
-  adminError: string | null;
-  hseError: string | null;
-}
+import { createAuthSession, type AuthSnapshot, type Authorization } from './authSession';
 
 interface AuthState {
   user: User | null;
@@ -41,91 +33,70 @@ const AuthContext = createContext<AuthState | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
-  const [user, setUser] = useState<User | null>(null);
-  const [sessionReady, setSessionReady] = useState(env.isDemo);
-  const [revision, setRevision] = useState(0);
-  const [authorization, setAuthorization] = useState<Authorization | null>(null);
-  const [sessionError, setSessionError] = useState<string | null>(null);
-  const currentUserId = useRef<string | null>(null);
-  const loading =
-    !env.isDemo && (!sessionReady || (Boolean(user) && authorization?.revision !== revision));
+  const [snapshot, setSnapshot] = useState<AuthSnapshot>({
+    user: null,
+    sessionReady: env.isDemo,
+    authorization: null,
+    sessionError: null,
+  });
+  const sessionRef = useRef<ReturnType<typeof createAuthSession> | null>(null);
+  const { user, sessionReady, authorization, sessionError } = snapshot;
+  const loading = !env.isDemo && (!sessionReady || (Boolean(user) && !authorization));
   const isAdmin = env.isDemo || (!loading && Boolean(authorization?.isAdmin));
   const hseRole = loading ? null : (authorization?.hseRole ?? null);
   const hseError = loading ? null : (authorization?.hseError ?? null);
   const error = sessionError ?? (loading ? null : (authorization?.adminError ?? hseError));
 
   useEffect(() => {
-    if (!supabase) return;
-    let alive = true;
+    const client = supabase;
+    if (!client) return;
     let receivedAuthEvent = false;
-    const updateSession = (nextUser: User | null) => {
-      if (!alive) return;
-      const nextId = nextUser?.id ?? null;
-      if (currentUserId.current !== nextId) {
-        if (currentUserId.current) queryClient.clear();
-        currentUserId.current = nextId;
-      }
-      setAuthorization(null);
-      setUser(nextUser);
-      setRevision((value) => value + 1);
-      setSessionReady(true);
-      setSessionError(null);
-    };
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      receivedAuthEvent = true;
-      if (event !== 'INITIAL_SESSION') queryClient.clear();
-      updateSession(session?.user ?? null);
-    });
-    void supabase.auth.getSession().then(({ data, error: getSessionError }) => {
-      if (!alive || receivedAuthEvent) return;
-      updateSession(data.session?.user ?? null);
-      setSessionError(getSessionError?.message ?? null);
-    });
-    return () => {
-      alive = false;
-      subscription.unsubscribe();
-    };
-  }, [queryClient]);
-
-  useEffect(() => {
-    if (!supabase || !sessionReady || !user) return;
-    let alive = true;
-    const userId = user.id;
-    const checkRevision = revision;
-    void Promise.all([
-      supabase.from('maintenance_admins').select('user_id').eq('user_id', userId).maybeSingle(),
-      getHSEMembership(userId),
-    ])
-      .then(([admin, hse]) => {
-        if (!alive) return;
-        setAuthorization({
-          revision: checkRevision,
+    const session = createAuthSession(
+      async (userId): Promise<Authorization> => {
+        const [admin, hse] = await Promise.all([
+          client.from('maintenance_admins').select('user_id').eq('user_id', userId).maybeSingle(),
+          getHSEMembership(userId),
+        ]);
+        return {
           isAdmin: !admin.error && Boolean(admin.data),
           hseRole: hse.error || !hse.membership?.is_active ? null : hse.membership.role,
           hseInactive: !hse.error && hse.membership?.is_active === false,
           adminError: admin.error?.message ?? null,
           hseError: hse.error,
-        });
-      })
-      .catch((cause: unknown) => {
-        if (!alive) return;
-        const message =
-          cause instanceof Error ? cause.message : 'Authorization verification failed';
-        setAuthorization({
-          revision: checkRevision,
-          isAdmin: false,
-          hseRole: null,
-          hseInactive: false,
-          adminError: message,
-          hseError: message,
-        });
-      });
-    return () => {
-      alive = false;
+        };
+      },
+      () => queryClient.clear(),
+      setSnapshot,
+      (check) => setTimeout(check, 0),
+    );
+    sessionRef.current = session;
+    const {
+      data: { subscription },
+    } = client.auth.onAuthStateChange((event, nextSession) => {
+      receivedAuthEvent = true;
+      session.handleSession(nextSession?.user ?? null, event);
+    });
+    void client.auth.getSession().then(({ data, error: getSessionError }) => {
+      if (receivedAuthEvent) return;
+      session.handleSession(data.session?.user ?? null, 'INITIAL_SESSION');
+      session.setSessionError(getSessionError?.message ?? null);
+    });
+    const revalidateOnFocus = () => session.revalidate();
+    const revalidateWhenVisible = () => {
+      if (document.visibilityState === 'visible') session.revalidate();
     };
-  }, [user?.id, sessionReady, revision]);
+    window.addEventListener('focus', revalidateOnFocus);
+    document.addEventListener('visibilitychange', revalidateWhenVisible);
+    const revalidationInterval = window.setInterval(revalidateWhenVisible, 5 * 60_000);
+    return () => {
+      session.dispose();
+      if (sessionRef.current === session) sessionRef.current = null;
+      subscription.unsubscribe();
+      window.removeEventListener('focus', revalidateOnFocus);
+      document.removeEventListener('visibilitychange', revalidateWhenVisible);
+      window.clearInterval(revalidationInterval);
+    };
+  }, [queryClient]);
 
   const value = useMemo<AuthState>(
     () => ({
@@ -148,10 +119,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!supabase) return;
         const { error: signOutError } = await supabase.auth.signOut();
         if (signOutError) throw signOutError;
-        queryClient.clear();
+        sessionRef.current?.handleSession(null, 'SIGNED_OUT');
       },
     }),
-    [user, isAdmin, hseRole, hseError, loading, authorization, error, queryClient],
+    [user, isAdmin, hseRole, hseError, loading, authorization, error],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -219,6 +219,133 @@
 .chain-form-panel {
   max-width: 740px;
 }
+.chain-create-page .chain-form-panel {
+  width: 100%;
+  max-width: 820px;
+  padding: clamp(20px, 3vw, 32px);
+}
+.chain-back-button {
+  gap: 9px;
+  border-color: #c9dbd8;
+  border-radius: 10px;
+  background: #fff;
+  color: #225a59;
+  box-shadow: 0 3px 12px #103e3c08;
+  white-space: nowrap;
+}
+.chain-back-button:hover {
+  border-color: #78b5aa;
+  background: #f1faf7;
+}
+.chain-back-button svg {
+  width: 17px;
+  height: 17px;
+  flex: none;
+}
+[dir='rtl'] .chain-back-button svg {
+  transform: scaleX(-1);
+}
+.chain-form-intro {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 26px;
+}
+.chain-form-intro-icon {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  flex: none;
+  place-items: center;
+  border-radius: 13px;
+  background: #e6f6f1;
+  color: #078473;
+}
+.chain-form-intro h2,
+.chain-form-section-heading h3 {
+  margin: 0 0 4px;
+  color: #153d42;
+}
+.chain-form-intro h2 {
+  font-size: 18px;
+}
+.chain-form-intro p,
+.chain-form-section-heading p {
+  margin: 0;
+  color: #627d80;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.chain-create-page .chain-mode {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 26px;
+  padding: 12px 0 0;
+  border: 0;
+  border-top: 1px solid #e1ebe9;
+  border-radius: 0;
+}
+.chain-create-page .chain-mode legend {
+  padding-inline: 0 12px;
+  color: #34595e;
+  font-size: 13px;
+}
+.chain-create-page .chain-mode-option {
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid #d7e5e2;
+  border-radius: 11px;
+  background: #fff;
+  cursor: pointer;
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease;
+}
+.chain-create-page .chain-mode-option:has(input:checked) {
+  border-color: #0b8978;
+  background: #effaf6;
+}
+.chain-create-page .chain-mode-option:focus-within {
+  outline: 3px solid #56baa8;
+  outline-offset: 2px;
+}
+.chain-create-page .chain-mode-option input {
+  margin: 3px 0 0;
+  accent-color: #0b8978;
+}
+.chain-mode-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.chain-mode-copy strong {
+  color: #1d484b;
+  font-size: 13px;
+}
+.chain-mode-copy small {
+  color: #657f81;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+.chain-form-section-heading {
+  margin-bottom: 17px;
+  padding-top: 23px;
+  border-top: 1px solid #e1ebe9;
+}
+.chain-form-section-heading h3 {
+  font-size: 16px;
+}
+.chain-create-page .chain-form-actions {
+  padding-top: 20px;
+  border-top: 1px solid #e1ebe9;
+}
+.chain-create-page .chain-form-actions .chain-button-primary {
+  min-width: 140px;
+}
 .chain-form {
   display: grid;
   gap: 18px;
@@ -375,6 +502,12 @@
   .chain-form-grid,
   .chain-fields {
     grid-template-columns: 1fr;
+  }
+  .chain-create-page .chain-mode {
+    grid-template-columns: 1fr;
+  }
+  .chain-create-page .chain-form-panel {
+    padding: 20px 16px;
   }
   .chain-table {
     min-width: 0;

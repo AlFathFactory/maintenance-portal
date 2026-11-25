@@ -11,6 +11,7 @@
     "format": "prettier --write src vite.config.ts playwright.config.ts tests scripts README.md",
     "format:check": "prettier --check src vite.config.ts playwright.config.ts tests scripts README.md",
     "test:hse": "node --test scripts/test-hse.mjs",
+    "test:auth": "node --test scripts/test-auth.mjs",
     "test:browser": "playwright test"
   },
   "dependencies": {

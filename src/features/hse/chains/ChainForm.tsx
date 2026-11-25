@@ -7,6 +7,7 @@ import { useToast } from '../../../shared/ui/ToastProvider';
 import { formatDate } from '../../../shared/date';
 import { ErrorMessage } from '../../../shared/ui/ErrorMessage';
 import { useHSEChain, useHSEChainActions, useHSEChainLineage, useHSEChains } from '../queries';
+import { HSEIcon } from '../HSEIcon';
 import { chainError, chainPath, pageSize } from './chainPresentation';
 import { ChainFields, chainFieldInput, emptyChainFields, toChainFields } from './ChainFields';
 import './chains.css';
@@ -32,36 +33,66 @@ export function NewChainPage() {
   const available =
     predecessor.data?.status === 'scrapped' && lineage.data?.successors.length === 0;
   return (
-    <section className="hse-page chain-page">
+    <section className="hse-page chain-page chain-create-page" aria-labelledby="chain-create-title">
       <div className="chain-heading">
         <div className="hse-page-heading">
           <span className="hse-page-kicker">{t('hse.title')}</span>
-          <h1>{t('chainUI.add')}</h1>
-          <p>{t('chainUI.inventoryIntro')}</p>
+          <h1 id="chain-create-title">{t('chainUI.add')}</h1>
+          <p>{t('chainUI.createIntro')}</p>
         </div>
-        <Link to="/hse/chains">{t('chainUI.back')}</Link>
+        <Link className="chain-button chain-back-button" to="/hse/chains">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M19 12H5m7 7-7-7 7-7" />
+          </svg>
+          <span>{t('chainUI.back')}</span>
+        </Link>
       </div>
       <div className="chain-panel chain-form-panel">
+        <div className="chain-form-intro">
+          <span className="chain-form-intro-icon">
+            <HSEIcon name="chains" />
+          </span>
+          <div>
+            <h2>{t('chainUI.registration')}</h2>
+            <p>{t('chainUI.registrationHint')}</p>
+          </div>
+        </div>
         <fieldset className="chain-mode">
-          <legend>{t('chainUI.replacement')}</legend>
-          <label>
+          <legend>{t('chainUI.registrationType')}</legend>
+          <label className="chain-mode-option">
             <input
               type="radio"
+              name="chain-mode"
               checked={!replacementMode}
               onChange={() => {
                 setReplacementMode(false);
                 setParams({});
               }}
             />
-            {t('chainUI.newMode')}
+            <span className="chain-mode-copy">
+              <strong>{t('chainUI.newMode')}</strong>
+              <small>{t('chainUI.newModeHint')}</small>
+            </span>
           </label>
-          <label>
+          <label className="chain-mode-option">
             <input
               type="radio"
+              name="chain-mode"
               checked={replacementMode}
               onChange={() => setReplacementMode(true)}
             />
-            {t('chainUI.replacementMode')}
+            <span className="chain-mode-copy">
+              <strong>{t('chainUI.replacementMode')}</strong>
+              <small>{t('chainUI.replacementModeHint')}</small>
+            </span>
           </label>
         </fieldset>
         {replacementMode && (
@@ -148,6 +179,10 @@ export function NewChainPage() {
             )}
           </div>
         )}
+        <div className="chain-form-section-heading">
+          <h3>{t('chainUI.technical')}</h3>
+          <p>{t('chainUI.technicalHint')}</p>
+        </div>
         <ChainForm
           key={replacementMode ? predecessorId || 'replacement' : 'new'}
           predecessor={replacementMode ? (available ? predecessor.data : undefined) : null}

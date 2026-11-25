@@ -600,18 +600,25 @@ export function createHSERepository(database: DB | null): HSERepository {
         throw error;
       });
       if (!record) return null;
-      const [checklist, results, comments, signatures] = await Promise.all([
+      const [checklist, results, comments, signatures, actors] = await Promise.all([
         repo.getChecklist(record.template_version),
         db().from('hse_chain_inspection_results').select('*').eq('inspection_id', id),
         db().from('hse_chain_inspection_comments').select('*').eq('inspection_id', id),
         repo.listSignatures(id),
+        db().rpc('hse_inspection_actor_emails', { p_inspection_id: id }),
       ]);
+      const actorRows =
+        checked(actors.data as { user_id: string; email: string | null }[] | null, actors.error) ??
+        [];
       return {
         inspection: record,
         checklist: required(checklist),
         results: checked(results.data as CheckpointResult[] | null, results.error) ?? [],
         comments: checked(comments.data as SectionComment[] | null, comments.error) ?? [],
         signatures,
+        actorEmails: Object.fromEntries(
+          actorRows.filter((actor) => actor.email).map((actor) => [actor.user_id, actor.email]),
+        ) as Record<string, string>,
       };
     },
     async createInspection(input) {
